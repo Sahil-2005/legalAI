@@ -13,7 +13,7 @@ class LLMService:
     def __init__(self):
         self.api_key = settings.GEMINI_API_KEY
         # Using the standard gemini-1.5-flash model endpoint for text generation tasks via REST
-        self.endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
+        self.endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
         
         if not self.api_key or self.api_key == "REPLACE_ME":
             logger.warning("GEMINI_API_KEY is missing or invalid. Generation sequences will fail.")
