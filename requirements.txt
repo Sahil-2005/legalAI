@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+pydantic
+pydantic-settings
+qdrant-client
+python-dotenv
+langchain-text-splitters
+PyMuPDF
+requests
+sentence-transformers
