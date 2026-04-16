@@ -1,0 +1,16 @@
+.particles-container {
+  position: fixed;   /* 🔥 FULLSCREEN BACKGROUND */
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  pointer-events: none; /* 🔥 allows clicking through */
+}
+
+/* Make canvas fill properly */
+.particles-container canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}

@@ -19,7 +19,7 @@ body {
 }
 
 .btn {
-  background: linear-gradient(135deg, #2563eb, #3b82f6);
+  background: linear-gradient(135deg,#FF9FFC, #5227FF);
   padding: 10px 16px;
   border-radius: 8px;
   border: none;
@@ -43,7 +43,7 @@ body {
 }
 
 .left span {
-  background: linear-gradient(90deg, #3b82f6, #60a5fa);
+  background: linear-gradient(90deg, #FF9FFC, #5227FF);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -56,7 +56,7 @@ body {
 .cta {
   margin-top: 20px;
   padding: 12px 20px;
-  background: linear-gradient(135deg, #2563eb, #3b82f6);
+  background: linear-gradient(135deg, #5227FF, #5227FF);
   border-radius: 10px;
   border: none;
   color: white;
@@ -87,7 +87,7 @@ body {
   margin-left: 10px;
   padding: 15px;
   border-radius: 10px;
-  background: linear-gradient(135deg, #2563eb, #3b82f6);
+  background: linear-gradient(135deg, #5227FF, #FF9FFC);
   border: none;
 }
 
@@ -117,7 +117,7 @@ body {
 
 .gradient {
   font-size: 3.5rem;
-  background: linear-gradient(90deg, #3b82f6, #60a5fa);
+  background: linear-gradient(90deg, #FF9FFC, #5227FF);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -295,7 +295,7 @@ steps */
 .step-number {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #3b82f6;
+  color: #5227FF;
 }
 
 /* TEXT */
@@ -341,7 +341,7 @@ steps */
 /* HOVER */
 .card:hover {
   transform: translateY(-8px);
-  box-shadow: 0 0 30px rgba(59,130,246,0.25);
+  box-shadow: 0 0 30px rgba(193, 107, 251, 0.758);
 }
 
 /* IMAGE WRAPPER (IMPORTANT) */
@@ -364,7 +364,7 @@ steps */
 .card-number {
   font-size: 1.4rem;
   font-weight: 700;
-  color: #3b82f6;
+  color: #FF9FFC;
   margin-top: 10px;
 }
 
@@ -435,10 +435,8 @@ steps */
 .cta {
   padding: 8px 18px;
   border-radius: 10px;
-
-  background: linear-gradient(135deg, #3b82f6, #6366f1);
+  background: linear-gradient(135deg, #5227FF, #5227FF);
   color: white !important;
-
   transition: 0.3s;
 }
 
@@ -594,7 +592,7 @@ steps */
 .gs-title {
   font-size: 3rem;
   font-weight: 800;
-  background: linear-gradient(90deg, #4facfe, #00f2fe);
+  background: linear-gradient(90deg, #FF9FFC, #5227FF);
   -webkit-background-clip: text;
   color: transparent;
 }
@@ -620,7 +618,7 @@ steps */
   padding: 14px 18px;
   border-radius: 12px;
   border: none;
-  background: linear-gradient(135deg, #4facfe, #00c6ff);
+  background: linear-gradient(90deg, #FF9FFC, #5227FF);
   color: white;
   cursor: pointer;
 }
@@ -661,7 +659,7 @@ steps */
 .info-card h3 {
   margin-bottom: 10px;
   font-size: 1.1rem;
-  color: #60a5fa;
+  color: #FF9FFC;
 }
 
 /* RAW OUTPUT */
@@ -692,7 +690,7 @@ steps */
 
 .bar div {
   height: 100%;
-  background: linear-gradient(to right, #4facfe, #00f2fe);
+ background: linear-gradient(90deg, #FF9FFC, #5227FF);
   border-radius: 10px;
 }
 
@@ -707,7 +705,7 @@ steps */
 .download-btn {
   margin: 20px;
   padding: 10px 20px;
-  background: #4facfe;
+  background: #FF9FFC;
   border: none;
   border-radius: 10px;
   color: white;
@@ -727,7 +725,7 @@ steps */
 .ai-section h2 {
   margin-bottom: 20px;
   font-size: 1.5rem;
-  color: #4facfe;
+  color: #FF9FFC;
 }
 
 .ai-content {
@@ -763,4 +761,24 @@ steps */
 .history span {
   font-size: 12px;
   opacity: 0.6;
+}
+
+.home-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.landing {
+  position: relative;
+  z-index: 10;
+}
+
+body {
+  background: #020617;
+}
+
+.landing,
+.overlay {
+  position: relative;
+  z-index: 10; /* 🔥 above particles */
 }
