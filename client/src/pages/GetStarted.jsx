@@ -133,6 +133,8 @@ import ResCard from "../components/ResCard";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import AILoader from "../components/AILoader";
+import { motion } from "framer-motion";
+import { useTypewriter } from "../hooks/useTypewriter";
 
 const GetStarted = () => {
   const [idea, setIdea] = useState("");
@@ -222,6 +224,9 @@ const GetStarted = () => {
   // 🔥 DYNAMIC RISK SCORE
   const riskScore = result.riskScore || (result.risks && result.risks.toLowerCase().includes("breach") ? 80 : 40);
 
+  // Typewriter effect for Markdown
+  const typedRawMarkdown = useTypewriter(result.raw || "", 3, 2200); // starts after cards finish
+
   // 🔥 PDF DOWNLOAD
   const downloadReport = () => {
     const content = `
@@ -299,52 +304,88 @@ ${result.raw}
       {loading ? (
         <AILoader />
       ) : (
-        <div className="result-grid">
-          <ResCard title="📌 Business Type" value={result.businessType} />
-          <ResCard title="📄 Licenses" value={result.licenses} />
-          <ResCard title="⚙️ Steps" value={result.steps} />
-          <ResCard title="💰 Cost" value={result.cost} />
-          <ResCard title="⚠️ Risks" value={result.risks} />
+        <div className="flex flex-col gap-6 mt-10 text-left items-center w-full max-w-5xl mx-auto">
+          {/* Top Row: Business Type & Cost */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+            <ResCard title="📌 Business Type" value={result.businessType} delay={0.2} />
+            <ResCard title="💰 Estimated Cost" value={result.cost} delay={0.5} />
+          </div>
+
+          {/* Licenses Section - spanning full width */}
+          <div className="w-full">
+            <ResCard title="📄 Required Licenses & Compliance" value={result.licenses} delay={0.9} />
+          </div>
+
+          {/* Bottom Row - Steps and Risks */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+            <ResCard title="⚙️ Actionable Steps" value={result.steps} delay={1.4} />
+            <ResCard title="⚠️ Legal Risks" value={result.risks} delay={1.9} />
+          </div>
         </div>
       )}
 
       {/* 🔥 RISK GRAPH */}
       {!loading && result.risks && (
-        <div className="risk-bar">
+        <motion.div 
+          className="risk-bar"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6, delay: 2.2 }}
+        >
           <p>Risk Score: {riskScore}%</p>
           <div className="bar">
-            <div style={{ width: `${riskScore}%` }}></div>
+            <motion.div 
+               initial={{ width: 0 }}
+               animate={{ width: `${riskScore}%` }}
+               transition={{ duration: 1.2, delay: 2.4, ease: "easeOut" }}
+            />
           </div>
-        </div>
+        </motion.div>
       )}
 
       {/* 🔥 AI SUGGESTIONS */}
       {!loading && suggestions.length > 0 && (
-        <div className="ai-suggestions">
+        <motion.div 
+          className="ai-suggestions"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 2.6 }}
+        >
           <h3>Smart Suggestions</h3>
           {suggestions.map((s, i) => (
             <p key={i}>{s}</p>
           ))}
-        </div>
+        </motion.div>
       )}
 
       {/* 🔥 DOWNLOAD */}
       {!loading && result.raw && (
-        <button className="download-btn" onClick={downloadReport}>
+        <motion.button 
+          className="download-btn" 
+          onClick={downloadReport}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 2.8 }}
+        >
           📄 Download Report
-        </button>
+        </motion.button>
       )}
 
       {/* FULL RESPONSE */}
       {!loading && result.raw && (
-        <div className="result-raw">
-          <h3>AI Explanation</h3>
-          <div className="prose prose-blue max-w-none text-left bg-white p-6 rounded-md shadow-sm border mt-4">
+        <motion.div 
+          className="result-raw mt-10 max-w-5xl mx-auto w-full text-left"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 2.1 }}
+        >
+          <h3 className="text-xl font-bold mb-4 text-[#FF9FFC]">Detailed Legal Breakdown</h3>
+          <div className="prose prose-invert max-w-none text-left bg-[#1e293b] p-8 rounded-xl shadow-lg border border-gray-700/50">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
-              {result.raw}
+              {typedRawMarkdown}
             </ReactMarkdown>
           </div>
-        </div>
+        </motion.div>
       )}
 
     </div>

@@ -14,7 +14,7 @@ class LLMService:
         self.api_key = settings.GEMINI_API_KEY
         self.grok_api_key = settings.GROK_API_KEY
         # Using the standard gemini-1.5-flash or pro endpoint
-        self.endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
+        self.endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
         self.grok_endpoint = "https://api.x.ai/v1/chat/completions"
         
         if not self.api_key or self.api_key == "REPLACE_ME":
@@ -73,7 +73,7 @@ RESPONSE (OUTPUT ONLY VALID JSON):"""
         
         payload = {
             # "model": "grok-beta",
-            "model": "llama-3.3-70b-versatile",
+            "model": "grok-beta",
             "messages": [
                 {
                     "role": "system",
