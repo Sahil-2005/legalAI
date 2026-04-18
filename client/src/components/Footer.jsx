@@ -1,34 +1,39 @@
+import { Link } from "react-router-dom";
+
 const Footer = () => {
   return (
     <footer className="footer">
       <div className="footer-container">
 
-        {/* LEFT */}
+        {/* LEFT — Brand */}
         <div className="footer-left">
-          <h2>⚖️ LegalAI</h2>
-          <p>AI-powered compliance assistant for Indian startups.</p>
+          <h2>⚖️ AMIVRE Legal</h2>
+          <p>
+            AI-powered legal compliance assistant for Indian startups.
+            Analyze your business against 50+ government regulations in seconds.
+          </p>
         </div>
 
-        {/* CENTER */}
+        {/* CENTER — Links */}
         <div className="footer-links">
-          <h4>Quick Links</h4>
-          <a href="/">Home</a>
-          <a href="/features">Features</a>
-          <a href="/how-it-works">How it works</a>
-          <a href="/get-started">Get Started</a>
+          <h4>Product</h4>
+          <Link to="/">Home</Link>
+          <Link to="/#features">Features</Link>
+          <Link to="/#how-it-works">How it works</Link>
+          <Link to="/get-started">Get Started</Link>
         </div>
 
-        {/* RIGHT */}
+        {/* RIGHT — Contact */}
         <div className="footer-contact">
           <h4>Contact</h4>
-          <p>Email: support@legalai.com</p>
+          <p>support@amivrelegal.com</p>
           <p>India 🇮🇳</p>
         </div>
 
       </div>
 
       <div className="footer-bottom">
-        © 2026 LegalAI. All rights reserved.
+        © {new Date().getFullYear()} AMIVRE Legal · All rights reserved · Built with Gemini & Qdrant
       </div>
     </footer>
   );

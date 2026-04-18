@@ -1,60 +1,94 @@
-// import heroImg from "../assets/hero1.png";
-
-// const Home = () => {
-//   return (
-//     <section className="landing">
-//       <div className="left">
-//        <h1 className="title">
-//         <span className="line1">AI-Powered</span>
-//         <span className="line2">Compliance</span>
-//         <span className="gradient">for Indian Startups</span>
-//         </h1>
-
-//         <p>Get instant legal advice tailored to your business</p>
-
-//         <button className="cta">Get Started</button>
-//       </div>
-
-//       <div className="right">
-//         <img src={heroImg} alt="hero" />
-//       </div>
-//     </section>
-//   );
-// };
-
-// export default Home;
-
-
 import heroImg from "../assets/hero1.png";
-import Particles from "../components/Particles";
+import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 
-const Home = () => {
+const Hero = () => {
   return (
     <div className="home-container">
-
- 
-
-      {/* 🔥 CONTENT */}
       <section className="landing">
         <div className="left">
-          <h1 className="title">
+          {/* Enterprise badge */}
+          <motion.div
+            className="hero-badge"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <span className="hero-badge-dot" />
+            Powered by RAG · Gemini LLM · Qdrant Vector DB
+          </motion.div>
+
+          <motion.h1
+            className="title"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+          >
             <span className="line1">AI-Powered</span>
             <span className="line2">Compliance</span>
             <span className="gradient">for Indian Startups</span>
-          </h1>
+          </motion.h1>
 
-          <p>Get instant legal advice tailored to your business</p>
+          <motion.p
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.5 }}
+          >
+            Navigate the complex legal landscape of India with confidence.
+            Get instant, AI-generated compliance analysis backed by{" "}
+            <strong style={{ color: "var(--text-primary)" }}>50+ government documents</strong>.
+          </motion.p>
 
-          <button className="cta">Get Started</button>
+          <motion.div
+            className="hero-cta-group"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.7 }}
+          >
+            <Link to="/get-started">
+              <button className="cta">Analyze Your Business →</button>
+            </Link>
+            <button
+              className="cta-secondary"
+              onClick={() => document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })}
+            >
+              Learn More ↓
+            </button>
+          </motion.div>
+
+          {/* Stats */}
+          <motion.div
+            className="hero-stats"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.9 }}
+          >
+            <div className="hero-stat">
+              <span className="hero-stat-value">50+</span>
+              <span className="hero-stat-label">Legal Documents</span>
+            </div>
+            <div className="hero-stat">
+              <span className="hero-stat-value">8</span>
+              <span className="hero-stat-label">Legal Domains</span>
+            </div>
+            <div className="hero-stat">
+              <span className="hero-stat-value">&lt;10s</span>
+              <span className="hero-stat-label">Analysis Time</span>
+            </div>
+          </motion.div>
         </div>
 
-        <div className="right">
-          <img src={heroImg} alt="hero" />
-        </div>
+        <motion.div
+          className="right"
+          initial={{ opacity: 0, scale: 0.95, x: 30 }}
+          animate={{ opacity: 1, scale: 1, x: 0 }}
+          transition={{ duration: 0.8, delay: 0.5 }}
+        >
+          <img src={heroImg} alt="AMIVRE Legal AI Dashboard" />
+        </motion.div>
       </section>
-
     </div>
   );
 };
 
-export default Home;
+export default Hero;

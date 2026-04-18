@@ -4,6 +4,8 @@ import {
   Route,
   useLocation
 } from "react-router-dom";
+import { useEffect } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 
 import Home from "./pages/Home";
 import GetStarted from "./pages/GetStarted";
@@ -14,15 +16,35 @@ import Particles from "./components/Particles";
 
 import "./App.css";
 
-/* 🔥 INNER APP (has access to location) */
+/* Scroll to top on route change */
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [pathname]);
+  return null;
+}
+
+/* Page transition wrapper */
+const PageTransition = ({ children }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, y: -10 }}
+    transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+  >
+    {children}
+  </motion.div>
+);
+
+/* INNER APP (has access to location) */
 function AppContent() {
   const location = useLocation();
-
   const isHome = location.pathname === "/";
 
   return (
     <>
-      {/* 🔥 BACKGROUND (only on Home) */}
+      {/* Background particles (only on Home) */}
       {isHome && (
         <Particles
           particleColors={["#8b5cf6"]}
@@ -31,22 +53,25 @@ function AppContent() {
         />
       )}
 
-      {/* 🔥 OPTIONAL CURSOR (only on Home) */}
+      {/* Splash cursor (only on Home) */}
       {isHome && <SplashCursor />}
 
+      <ScrollToTop />
       <Navbar />
 
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/get-started" element={<GetStarted />} />
-      </Routes>
+      <AnimatePresence mode="wait">
+        <Routes location={location} key={location.pathname}>
+          <Route path="/" element={<PageTransition><Home /></PageTransition>} />
+          <Route path="/get-started" element={<PageTransition><GetStarted /></PageTransition>} />
+        </Routes>
+      </AnimatePresence>
 
       <Footer />
     </>
   );
 }
 
-/* 🔥 WRAPPER */
+/* WRAPPER */
 function App() {
   return (
     <BrowserRouter>
