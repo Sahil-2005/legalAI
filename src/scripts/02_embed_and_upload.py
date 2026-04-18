@@ -12,7 +12,6 @@ logger = logging.getLogger(__name__)
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 PROCESSED_DATA_DIR = PROJECT_ROOT / "data" / "processed"
-CHUNKS_FILE = PROCESSED_DATA_DIR / "chunks.json"
 
 # Load config values from environment or config module but for script, we can use simple dotenv
 from dotenv import load_dotenv
@@ -27,14 +26,24 @@ EMBEDDING_MODEL = "all-MiniLM-L6-v2"
 VECTOR_SIZE = 384  # Size for all-MiniLM-L6-v2
 
 def upload_to_qdrant():
-    if not CHUNKS_FILE.exists():
-        logger.error(f"Chunks file not found at {CHUNKS_FILE}. Run 01_chunk_pdfs.py first.")
+    if not PROCESSED_DATA_DIR.exists():
+        logger.error(f"Processed directory not found at {PROCESSED_DATA_DIR}. Run 01_chunk_pdfs.py first.")
+        return
+
+    chunk_files = list(PROCESSED_DATA_DIR.glob("*_chunks.json"))
+    if not chunk_files:
+        logger.error(f"No chunk files found in {PROCESSED_DATA_DIR}. Run 01_chunk_pdfs.py first.")
         return
 
     # 1. Load JSON Data
-    with open(CHUNKS_FILE, "r", encoding="utf-8") as f:
-        chunks = json.load(f)
-    logger.info(f"Loaded {len(chunks)} chunks from {CHUNKS_FILE}")
+    chunks = []
+    for chunk_file in chunk_files:
+        with open(chunk_file, "r", encoding="utf-8") as f:
+            file_chunks = json.load(f)
+            chunks.extend(file_chunks)
+            logger.info(f"Loaded {len(file_chunks)} chunks from {chunk_file.name}")
+            
+    logger.info(f"Total chunks loaded: {len(chunks)}")
 
     # 2. Init Local Embeddings Model
     logger.info(f"Loading sentence transformer model: {EMBEDDING_MODEL}")
@@ -88,6 +97,8 @@ def upload_to_qdrant():
             
             payload = {
                 "source": chunk["source"],
+                "folder": chunk.get("folder", "unknown"),
+                "ref": chunk.get("ref", ""),
                 "page_number": chunk["page_number"],
                 "text": chunk["text"],
                 "chunk_id": chunk.get("chunk_id", f"chunk_{i+j}")
