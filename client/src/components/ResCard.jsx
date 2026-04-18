@@ -5,7 +5,7 @@ const ResCard = ({ title, value, delay = 0 }) => {
   const typedValue = useTypewriter(value || "", 5, delay * 1000 + 300);
 
   return (
-    <motion.div 
+    <motion.div
       className="info-card h-full"
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}

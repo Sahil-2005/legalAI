@@ -43,7 +43,7 @@ INSTRUCTIONS:
 2. If the user's query cannot be answered using the given context, clearly state: "I cannot answer this question based on the provided context." Do not hallucinate or rely on outside knowledge.
 3. Be professional, concise, and highlight specific obligations or laws mentioned.
 4. Provide citations to the Source Document and Page Numbers where possible based on the context snippets.
-5. You MUST return your response as a valid JSON object matching exactly this schema, without any markdown formatting around it (do not use ```json):
+5. You MUST return your response as a valid JSON object matching exactly this schema. IMPORTANT: You must escape any newlines in your strings using \\n so that JSON.parse() does not fail!
 {{
   "businessType": "Short classification of the business",
   "licenses": "Comma separated list of required licenses and compliances",

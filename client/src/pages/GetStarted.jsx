@@ -135,6 +135,10 @@ import remarkGfm from "remark-gfm";
 import AILoader from "../components/AILoader";
 import { motion } from "framer-motion";
 import { useTypewriter } from "../hooks/useTypewriter";
+import RiskGauge from "../components/RiskGauge";
+import Timeline from "../components/Timeline";
+import Typewriter from "../components/Typewriter";
+import { AlertTriangle, Briefcase, IndianRupee, ShieldCheck } from "lucide-react";
 
 const GetStarted = () => {
   const [idea, setIdea] = useState("");
@@ -171,16 +175,48 @@ const GetStarted = () => {
       let parsed = {};
       try {
         let cleanText = text;
-        // In case Grok or Gemini still wraps it in markdown despite instructions
         if (cleanText.includes("```json")) {
            cleanText = cleanText.split("```json")[1].split("```")[0].trim();
         } else if (cleanText.includes("```")) {
            cleanText = cleanText.split("```")[1].split("```")[0].trim();
         }
-        parsed = JSON.parse(cleanText);
+        
+        // Attempt standard parse first
+        try {
+          parsed = JSON.parse(cleanText);
+        } catch (initialErr) {
+          // LLM JSON structure might contain unescaped literal newlines or be truncated midway.
+          console.warn("JSON Parse Failed. Engaging Robust Regex Extraction...", initialErr);
+          
+          const extractField = (field, isNum = false) => {
+             if (isNum) {
+                 const match = cleanText.match(new RegExp(`"${field}"\\s*:\\s*(\\d+)`));
+                 return match ? parseInt(match[1]) : null;
+             }
+             const match = cleanText.match(new RegExp(`"${field}"\\s*:\\s*"(.*?)"(?:\\s*,\\s*"|\\s*})`, 's'));
+             if (match) return match[1].replace(/\\n/g, '\n').replace(/\\"/g, '"');
+             return null;
+          };
+
+          parsed = {
+             businessType: extractField("businessType"),
+             licenses: extractField("licenses"),
+             steps: extractField("steps"),
+             risks: extractField("risks"),
+             riskScore: extractField("riskScore", true),
+             cost: extractField("cost")
+          };
+
+          // Raw extraction (can be incredibly long and usually where the truncation drops)
+          const rawMatch = cleanText.match(/"raw"\s*:\s*"(.*)/s);
+          if (rawMatch) {
+              parsed.raw = rawMatch[1].replace(/\"\s*}$/, '').replace(/\\n/g, '\n').replace(/\\"/g, '"');
+          } else {
+              parsed.raw = cleanText;
+          }
+        }
       } catch (parseErr) {
-        console.error("Failed to parse LLM JSON:", parseErr);
-        // Fallback if parsing fails
+        console.error("Critical Failure in Content Processing:", parseErr);
         parsed = {
           businessType: idea.substring(0, 20) + "...",
           licenses: "Check detailed response below.",
@@ -225,7 +261,7 @@ const GetStarted = () => {
   const riskScore = result.riskScore || (result.risks && result.risks.toLowerCase().includes("breach") ? 80 : 40);
 
   // Typewriter effect for Markdown
-  const typedRawMarkdown = useTypewriter(result.raw || "", 3, 2200); // starts after cards finish
+  const typedRawMarkdown = useTypewriter(result.raw || "", 3, 3500); // starts after HUD finishes
 
   // 🔥 PDF DOWNLOAD
   const downloadReport = () => {
@@ -300,48 +336,112 @@ ${result.raw}
         </button>
       </div>
 
-      {/* RESULT CARDS */}
+      {/* RESULT DASHBOARD HUD */}
       {loading ? (
         <AILoader />
-      ) : (
-        <div className="flex flex-col gap-6 mt-10 text-left items-center w-full max-w-5xl mx-auto">
-          {/* Top Row: Business Type & Cost */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
-            <ResCard title="📌 Business Type" value={result.businessType} delay={0.2} />
-            <ResCard title="💰 Estimated Cost" value={result.cost} delay={0.5} />
+      ) : result.businessType ? (
+        <div className="flex flex-col gap-8 mt-14 text-left items-center w-full max-w-6xl mx-auto mb-10">
+          
+          {/* TOP ROW: Summary & Gauge */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full">
+            {/* Left Area: Business Type & Cost */}
+            <div className="lg:col-span-2 flex flex-col gap-6">
+              <motion.div 
+                className="bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 p-6 rounded-2xl shadow-lg relative overflow-hidden"
+                initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.2 }}
+              >
+                <div className="absolute top-0 left-0 w-1 h-full bg-cyan-400 shadow-[0_0_15px_#22d3ee]" />
+                <h3 className="flex items-center gap-2 text-slate-400 font-semibold mb-2 uppercase tracking-wider text-sm"><Briefcase className="w-5 h-5 text-cyan-400" /> Business Classification</h3>
+                <p className="text-xl text-white font-medium pl-1">
+                  <Typewriter text={result.businessType} delay={15} startDelay={600} />
+                </p>
+              </motion.div>
+
+              <motion.div 
+                className="bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 p-6 rounded-2xl shadow-lg relative overflow-hidden"
+                initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.4 }}
+              >
+                <div className="absolute top-0 left-0 w-1 h-full bg-emerald-400 shadow-[0_0_15px_#34d399]" />
+                <h3 className="flex items-center gap-2 text-slate-400 font-semibold mb-2 uppercase tracking-wider text-sm"><IndianRupee className="w-5 h-5 text-emerald-400" /> Estimated Cost</h3>
+                <p className="text-xl text-white font-medium pl-1">
+                  <Typewriter text={result.cost} delay={15} startDelay={900} />
+                </p>
+              </motion.div>
+            </div>
+
+            {/* Right Area: Risk Gauge */}
+            <motion.div 
+               className="lg:col-span-1 w-full flex items-center justify-center p-2"
+               initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.6 }}
+            >
+                <RiskGauge score={riskScore} />
+            </motion.div>
           </div>
 
-          {/* Licenses Section - spanning full width */}
-          <div className="w-full">
-            <ResCard title="📄 Required Licenses & Compliance" value={result.licenses} delay={0.9} />
-          </div>
+          {/* SECOND ROW: Licenses Badges */}
+          <motion.div 
+            className="w-full bg-slate-800/30 border border-slate-700/50 p-8 rounded-3xl mt-4"
+            initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.8 }}
+          >
+            <h3 className="flex items-center gap-2 text-lg text-white font-bold mb-6"><ShieldCheck className="w-6 h-6 text-indigo-400" /> Essential Licenses & Compliance</h3>
+            <div className="flex flex-wrap gap-4">
+              {result.licenses ? result.licenses.split(',').map((lic, i) => (
+                <motion.div 
+                  key={i}
+                  className="px-5 py-3 bg-indigo-500/10 border border-indigo-500/30 text-indigo-200 rounded-full font-medium shadow-[0_0_15px_rgba(99,102,241,0.1)] backdrop-blur-md"
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ type: "spring", delay: 1.2 + (i * 0.15) }}
+                >
+                  {lic.trim()}
+                </motion.div>
+              )) : <span className="text-slate-500">Evaluating...</span>}
+            </div>
+          </motion.div>
 
-          {/* Bottom Row - Steps and Risks */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
-            <ResCard title="⚙️ Actionable Steps" value={result.steps} delay={1.4} />
-            <ResCard title="⚠️ Legal Risks" value={result.risks} delay={1.9} />
+          {/* BOTTOM ROW: Timeline & Risks */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 w-full mt-4">
+            
+            {/* Steps Timeline */}
+            <div className="w-full">
+               <motion.h3 
+                 className="flex items-center gap-2 text-xl font-bold text-white mb-6 border-b border-slate-700 pb-3"
+                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.6 }}
+               >
+                 ⚙️ Action Plan
+               </motion.h3>
+               <Timeline stepsString={result.steps} initialDelay={1.8} />
+            </div>
+
+            {/* Risk Warning Cards */}
+            <div className="w-full">
+               <motion.h3 
+                 className="flex items-center gap-3 text-xl font-bold text-rose-400 mb-6 border-b border-slate-700 pb-3"
+                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.8 }}
+               >
+                 <AlertTriangle strokeWidth={2.5} className="w-6 h-6" /> Legal Vulnerabilities
+               </motion.h3>
+               
+               <div className="flex flex-col gap-4 mt-6">
+                 {result.risks ? result.risks.split('\n').map(r => r.trim()).filter(r => r.length > 0).map((risk, idx) => (
+                   <motion.div 
+                     key={idx}
+                     className="bg-rose-500/5 border border-rose-500/20 p-5 rounded-2xl flex gap-4 items-start relative overflow-hidden"
+                     initial={{ opacity: 0, x: 30 }}
+                     animate={{ opacity: 1, x: 0 }}
+                     transition={{ duration: 0.5, delay: 2.2 + (idx * 0.3) }}
+                   >
+                     <div className="absolute left-0 top-0 w-1 h-full bg-rose-500/50" />
+                     <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0 mt-1" />
+                     <p className="text-slate-300 text-sm leading-relaxed"><Typewriter text={risk.replace(/^•|-/, '').trim()} delay={15} startDelay={(2.2 + (idx * 0.3)) * 1000 + 300} /></p>
+                   </motion.div>
+                 )) : null}
+               </div>
+            </div>
+
           </div>
         </div>
-      )}
-
-      {/* 🔥 RISK GRAPH */}
-      {!loading && result.risks && (
-        <motion.div 
-          className="risk-bar"
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6, delay: 2.2 }}
-        >
-          <p>Risk Score: {riskScore}%</p>
-          <div className="bar">
-            <motion.div 
-               initial={{ width: 0 }}
-               animate={{ width: `${riskScore}%` }}
-               transition={{ duration: 1.2, delay: 2.4, ease: "easeOut" }}
-            />
-          </div>
-        </motion.div>
-      )}
+      ) : null}
 
       {/* 🔥 AI SUGGESTIONS */}
       {!loading && suggestions.length > 0 && (
@@ -358,29 +458,29 @@ ${result.raw}
         </motion.div>
       )}
 
-      {/* 🔥 DOWNLOAD */}
+      {/* FIRE DOWNLOAD */}
       {!loading && result.raw && (
         <motion.button 
-          className="download-btn" 
+          className="download-btn z-10 relative mb-10" 
           onClick={downloadReport}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 2.8 }}
+          transition={{ duration: 0.5, delay: 3.8 }}
         >
-          📄 Download Report
+          📄 Download Complete Report
         </motion.button>
       )}
 
       {/* FULL RESPONSE */}
       {!loading && result.raw && (
         <motion.div 
-          className="result-raw mt-10 max-w-5xl mx-auto w-full text-left"
+          className="result-raw mt-6 max-w-6xl mx-auto w-full text-left"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 2.1 }}
+          transition={{ duration: 0.8, delay: 3.2 }}
         >
-          <h3 className="text-xl font-bold mb-4 text-[#FF9FFC]">Detailed Legal Breakdown</h3>
-          <div className="prose prose-invert max-w-none text-left bg-[#1e293b] p-8 rounded-xl shadow-lg border border-gray-700/50">
+          <h3 className="text-2xl font-bold mb-6 text-[#FF9FFC]">Detailed Legal Synthesis</h3>
+          <div className="prose prose-invert max-w-none text-left bg-[#1e293b]/80 backdrop-blur-xl p-10 rounded-3xl shadow-[0_0_40px_rgba(30,41,59,0.5)] border border-gray-700/50 leading-loose">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
               {typedRawMarkdown}
             </ReactMarkdown>
