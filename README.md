@@ -1,4 +1,4 @@
-# AMIVRE Legal - AI Compliance Assistant for Indian Startups
+# LexAgent - AI Compliance Assistant for Indian Startups
 
 ![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-00a67e.svg)
@@ -7,7 +7,7 @@
 ![Vite](https://img.shields.io/badge/Vite-5.0-646cff.svg)
 ![Framer Motion](https://img.shields.io/badge/Framer%20Motion-Premium%20Animations-ff0055.svg)
 
-AMIVRE Legal is a premium, full-stack Retrieval-Augmented Generation (RAG) platform tailored to assist with **Indian Startup Compliance**. 
+LexAgent is a premium, full-stack Retrieval-Augmented Generation (RAG) platform tailored to assist with **Indian Startup Compliance**. 
 
 It combines a blazing-fast FastAPI vector-search backend with a "billion-dollar SaaS" tier React frontend. It leverages local MiniLM embeddings, Qdrant for semantic search, and the Gemini 2.5 Flash LLM to generate precise, context-aware legal reports based on real compliance documents (Companies Act, DPDP, IT Act, etc.).
 
@@ -110,7 +110,7 @@ You need to run both the backend server and the frontend client simultaneously.
 
 **Terminal 1 (Backend):**
 ```bash
-# From the root LegalAI directory
+# From the root directory
 uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 

@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     Loads securely from environment variables or .env file.
     """
     # Environment configs
-    APP_NAME: str = "LegalAI Assistant"
+    APP_NAME: str = "LexAgent Assistant"
     DEBUG_MODE: bool = False
 
     # Qdrant configs

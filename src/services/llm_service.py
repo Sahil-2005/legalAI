@@ -35,7 +35,7 @@ class LLMService:
             text = chunk.get("text", "").strip()
             context_text += f"\n--- Context Chunk {i+1} [Source: {source}, Page: {page}, URL: {ref_url}] ---\n{text}\n"
 
-        prompt = f"""You are a strict, highly accurate Legal AI Assistant specializing in Indian Startup Compliance.
+        prompt = f"""You are a strict, highly accurate LexAgent AI Assistant specializing in Indian Startup Compliance.
 
 Your task is to analyze the user's business idea and answer their legal compliance query STRICTLY based on the Context Chunks provided below.
 
@@ -87,7 +87,7 @@ RESPONSE (OUTPUT ONLY VALID JSON):"""
             "messages": [
                 {
                     "role": "system",
-                    "content": "You are a strict, highly accurate Legal AI Assistant specializing in Indian Startup Compliance. You must respond in valid JSON format with the exact keys: businessType, licenses, steps, risks, riskScore, cost, and raw.\n\nCRITICAL CITATION RULE:\nWhenever you state a legal requirement, step, or risk, you MUST append a markdown citation at the end of the sentence using the provided context. \nFormat it EXACTLY like this: [Document Name, Page X](URL)\n\nExample of correct output:\n\"You must ensure the security of patient data. ([Telemedicine Guidelines, Page 14](https://esanjeevani.mohfw.gov.in...))\"\n\nIf a URL is empty, just use the document name and page. Do not hallucinate URLs."
+                    "content": "You are a strict, highly accurate LexAgent AI Assistant specializing in Indian Startup Compliance. You must respond in valid JSON format with the exact keys: businessType, licenses, steps, risks, riskScore, cost, and raw.\n\nCRITICAL CITATION RULE:\nWhenever you state a legal requirement, step, or risk, you MUST append a markdown citation at the end of the sentence using the provided context. \nFormat it EXACTLY like this: [Document Name, Page X](URL)\n\nExample of correct output:\n\"You must ensure the security of patient data. ([Telemedicine Guidelines, Page 14](https://esanjeevani.mohfw.gov.in...))\"\n\nIf a URL is empty, just use the document name and page. Do not hallucinate URLs."
                 },
                 {
                     "role": "user",

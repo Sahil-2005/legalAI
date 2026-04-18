@@ -250,7 +250,7 @@ const AILoader = ({ retrievedContext = [], onStreamComplete }) => {
             fontSize: "0.68rem", color: "var(--text-muted)", fontFamily: "var(--font-mono)",
             marginLeft: "8px", letterSpacing: "0.05em",
           }}>
-            amivre-legal — rag-pipeline
+            lexagent — rag-pipeline
           </span>
         </div>
 

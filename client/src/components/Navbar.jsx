@@ -73,7 +73,7 @@ const Navbar = () => {
           >
             ⚖️
           </motion.div>
-          <span>AMIVRE</span>
+          <span>LexAgent</span>
           <span style={{
             fontWeight: 400,
             color: "var(--text-tertiary)",

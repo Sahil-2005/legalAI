@@ -7,7 +7,7 @@ const Footer = () => {
 
         {/* LEFT — Brand */}
         <div className="footer-left">
-          <h2>⚖️ AMIVRE Legal</h2>
+          <h2>⚖️ LexAgent</h2>
           <p>
             AI-powered legal compliance assistant for Indian startups.
             Analyze your business against 50+ government regulations in seconds.
@@ -26,14 +26,14 @@ const Footer = () => {
         {/* RIGHT — Contact */}
         <div className="footer-contact">
           <h4>Contact</h4>
-          <p>support@amivrelegal.com</p>
+          <p>support@lexagent.com</p>
           <p>India 🇮🇳</p>
         </div>
 
       </div>
 
       <div className="footer-bottom">
-        © {new Date().getFullYear()} AMIVRE Legal · All rights reserved · Built with Gemini & Qdrant
+        © {new Date().getFullYear()} LexAgent · All rights reserved · Built with Gemini & Qdrant
       </div>
     </footer>
   );

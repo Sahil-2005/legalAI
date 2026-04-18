@@ -91,7 +91,7 @@ const Hero = () => {
           animate={{ opacity: 1, scale: 1, x: 0 }}
           transition={{ duration: 0.8, delay: 0.5 }}
         >
-          <img src={heroImg} alt="AMIVRE Legal AI Dashboard" />
+          <img src={heroImg} alt="LexAgent AI Dashboard" />
         </motion.div>
       </section>
     </div>

@@ -14,7 +14,7 @@ const Features = () => {
         transition={{ duration: 0.5 }}
       >
         <h2>
-          Experience <span className="gradient">LegalAI</span> in Action
+          Experience <span className="gradient">LexAgent</span> in Action
         </h2>
         <p className="subtitle">
           Enterprise-grade compliance analysis, simplified for every startup.
