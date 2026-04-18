@@ -130,6 +130,9 @@
 import { useState, useEffect } from "react";
 import { analyzeLegal } from "../api/api";
 import ResCard from "../components/ResCard";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import AILoader from "../components/AILoader";
 
 const GetStarted = () => {
   const [idea, setIdea] = useState("");
@@ -161,33 +164,43 @@ const GetStarted = () => {
       const data = await analyzeLegal(idea);
 
       const text =
-        data.response || data.data?.response || "No response received";
+        data.response || data.data?.response || "{}";
 
-      const parsed = {
-        businessType: idea.toLowerCase().includes("e-commerce")
-          ? "E-commerce Platform"
-          : "Digital Business",
+      let parsed = {};
+      try {
+        let cleanText = text;
+        // In case Grok or Gemini still wraps it in markdown despite instructions
+        if (cleanText.includes("```json")) {
+           cleanText = cleanText.split("```json")[1].split("```")[0].trim();
+        } else if (cleanText.includes("```")) {
+           cleanText = cleanText.split("```")[1].split("```")[0].trim();
+        }
+        parsed = JSON.parse(cleanText);
+      } catch (parseErr) {
+        console.error("Failed to parse LLM JSON:", parseErr);
+        // Fallback if parsing fails
+        parsed = {
+          businessType: idea.substring(0, 20) + "...",
+          licenses: "Check detailed response below.",
+          steps: "Review AI analysis.",
+          risks: "Potential non-compliance (Parsing Error)",
+          cost: "Consult Legal",
+          raw: text
+        };
+      }
 
-        licenses: text.includes("consent")
-          ? "User Consent, Data Protection Compliance"
-          : "General Compliance Required",
-
-        steps:
-          "Implement privacy policy, collect user consent, secure data storage",
-
-        risks: text.includes("breach")
-          ? "Data Breach Risk"
-          : "Legal non-compliance risk",
-
-        cost: "Varies depending on scale",
-
-        raw: text
-      };
-
-      setResult(parsed);
+      setResult({
+        businessType: parsed.businessType || "Unknown Business",
+        licenses: parsed.licenses || "General Compliance Required",
+        steps: parsed.steps || "Please refer to explanation.",
+        risks: parsed.risks || "Standard Legal Risk",
+        cost: parsed.cost || "Variable Cost",
+        riskScore: parsed.riskScore || null,
+        raw: parsed.raw || text
+      });
 
       // 🔥 SAVE HISTORY
-      const newHistory = [idea, ...history.slice(0, 4)];
+      const newHistory = [idea, ...history.filter(h => h !== idea).slice(0, 3)];
       setHistory(newHistory);
       localStorage.setItem("history", JSON.stringify(newHistory));
 
@@ -206,9 +219,8 @@ const GetStarted = () => {
     setLoading(false);
   };
 
-  // 🔥 SIMPLE RISK SCORE
-  const riskScore =
-    result.risks.toLowerCase().includes("breach") ? 80 : 40;
+  // 🔥 DYNAMIC RISK SCORE
+  const riskScore = result.riskScore || (result.risks && result.risks.toLowerCase().includes("breach") ? 80 : 40);
 
   // 🔥 PDF DOWNLOAD
   const downloadReport = () => {
@@ -284,16 +296,20 @@ ${result.raw}
       </div>
 
       {/* RESULT CARDS */}
-      <div className="result-grid">
-        <ResCard title="📌 Business Type" value={result.businessType} />
-        <ResCard title="📄 Licenses" value={result.licenses} />
-        <ResCard title="⚙️ Steps" value={result.steps} />
-        <ResCard title="💰 Cost" value={result.cost} />
-        <ResCard title="⚠️ Risks" value={result.risks} />
-      </div>
+      {loading ? (
+        <AILoader />
+      ) : (
+        <div className="result-grid">
+          <ResCard title="📌 Business Type" value={result.businessType} />
+          <ResCard title="📄 Licenses" value={result.licenses} />
+          <ResCard title="⚙️ Steps" value={result.steps} />
+          <ResCard title="💰 Cost" value={result.cost} />
+          <ResCard title="⚠️ Risks" value={result.risks} />
+        </div>
+      )}
 
       {/* 🔥 RISK GRAPH */}
-      {result.risks && (
+      {!loading && result.risks && (
         <div className="risk-bar">
           <p>Risk Score: {riskScore}%</p>
           <div className="bar">
@@ -303,7 +319,7 @@ ${result.raw}
       )}
 
       {/* 🔥 AI SUGGESTIONS */}
-      {suggestions.length > 0 && (
+      {!loading && suggestions.length > 0 && (
         <div className="ai-suggestions">
           <h3>Smart Suggestions</h3>
           {suggestions.map((s, i) => (
@@ -313,17 +329,21 @@ ${result.raw}
       )}
 
       {/* 🔥 DOWNLOAD */}
-      {result.raw && (
+      {!loading && result.raw && (
         <button className="download-btn" onClick={downloadReport}>
           📄 Download Report
         </button>
       )}
 
       {/* FULL RESPONSE */}
-      {result.raw && (
+      {!loading && result.raw && (
         <div className="result-raw">
           <h3>AI Explanation</h3>
-          <p>{result.raw}</p>
+          <div className="prose prose-blue max-w-none text-left bg-white p-6 rounded-md shadow-sm border mt-4">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {result.raw}
+            </ReactMarkdown>
+          </div>
         </div>
       )}
 
