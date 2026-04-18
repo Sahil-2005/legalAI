@@ -31,18 +31,28 @@ class LLMService:
         for i, chunk in enumerate(context_chunks):
             source = chunk.get("source", "Unknown Document")
             page = chunk.get("page_number", "?")
+            ref_url = chunk.get("ref", "")
             text = chunk.get("text", "").strip()
-            context_text += f"\n--- Context Chunk {i+1} [Source: {source}, Page: {page}] ---\n{text}\n"
+            context_text += f"\n--- Context Chunk {i+1} [Source: {source}, Page: {page}, URL: {ref_url}] ---\n{text}\n"
 
         prompt = f"""You are a strict, highly accurate Legal AI Assistant specializing in Indian Startup Compliance.
 
 Your task is to analyze the user's business idea and answer their legal compliance query STRICTLY based on the Context Chunks provided below.
 
+CRITICAL CITATION RULE:
+Whenever you state a legal requirement, step, or risk, you MUST append a markdown citation at the end of the sentence using the provided context. 
+Format it EXACTLY like this: [Document Name, Page X](URL)
+
+Example of correct output:
+"You must ensure the security of patient data. ([Telemedicine Guidelines, Page 14](https://esanjeevani.mohfw.gov.in...))"
+
+If a URL is empty, just use the document name and page. Do not hallucinate URLs.
+
 INSTRUCTIONS:
 1. ONLY utilize the information provided in the Context Chunks to formulate your response.
 2. If the user's query cannot be answered using the given context, clearly state: "I cannot answer this question based on the provided context." Do not hallucinate or rely on outside knowledge.
 3. Be professional, concise, and highlight specific obligations or laws mentioned.
-4. Provide citations to the Source Document and Page Numbers where possible based on the context snippets.
+4. Provide citations strictly adhering to the CRITICAL CITATION RULE above.
 5. You MUST return your response as a valid JSON object matching exactly this schema. IMPORTANT: You must escape any newlines in your strings using \\n so that JSON.parse() does not fail!
 {{
   "businessType": "Short classification of the business",
@@ -77,7 +87,7 @@ RESPONSE (OUTPUT ONLY VALID JSON):"""
             "messages": [
                 {
                     "role": "system",
-                    "content": "You are a strict, highly accurate Legal AI Assistant specializing in Indian Startup Compliance. Always respond in valid JSON format as requested."
+                    "content": "You are a strict, highly accurate Legal AI Assistant specializing in Indian Startup Compliance. You must respond in valid JSON format with the exact keys: businessType, licenses, steps, risks, riskScore, cost, and raw.\n\nCRITICAL CITATION RULE:\nWhenever you state a legal requirement, step, or risk, you MUST append a markdown citation at the end of the sentence using the provided context. \nFormat it EXACTLY like this: [Document Name, Page X](URL)\n\nExample of correct output:\n\"You must ensure the security of patient data. ([Telemedicine Guidelines, Page 14](https://esanjeevani.mohfw.gov.in...))\"\n\nIf a URL is empty, just use the document name and page. Do not hallucinate URLs."
                 },
                 {
                     "role": "user",
@@ -85,7 +95,7 @@ RESPONSE (OUTPUT ONLY VALID JSON):"""
                 }
             ],
             "temperature": 0.1,
-            "max_tokens": 1024
+            "max_tokens": 4096
         }
         
         try:
@@ -131,7 +141,7 @@ RESPONSE (OUTPUT ONLY VALID JSON):"""
                 "temperature": 0.1,
                 "topK": 40,
                 "topP": 0.95,
-                "maxOutputTokens": 2048,
+                "maxOutputTokens": 4096,
                 "responseMimeType": "application/json"
             }
         }

@@ -53,7 +53,8 @@ class SemanticSearchService:
                     "score": hit.score,
                     "text": payload.get("text", ""),
                     "source": payload.get("source", "Unknown"),
-                    "page_number": payload.get("page_number", 0)
+                    "page_number": payload.get("page_number", 0),
+                    "ref": payload.get("ref", "")
                 })
                 
             return context_results
