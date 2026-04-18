@@ -13,9 +13,9 @@ class LLMService:
     def __init__(self):
         self.api_key = settings.GEMINI_API_KEY
         self.grok_api_key = settings.GROK_API_KEY
-        # Using the standard gemini-1.5-flash or pro endpoint
+        # Using the standard gemini-2.5-flash or pro endpoint
         self.endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
-        self.grok_endpoint = "https://api.x.ai/v1/chat/completions"
+        self.grok_endpoint = "https://api.groq.com/openai/v1/chat/completions"
         
         if not self.api_key or self.api_key == "REPLACE_ME":
             logger.warning("GEMINI_API_KEY is missing or invalid. Generation sequences will fail.")
@@ -73,7 +73,7 @@ RESPONSE (OUTPUT ONLY VALID JSON):"""
         
         payload = {
             # "model": "grok-beta",
-            "model": "grok-beta",
+            "model": "llama-3.3-70b-versatile",
             "messages": [
                 {
                     "role": "system",
