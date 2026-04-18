@@ -10,9 +10,12 @@
   box-sizing: border-box;
 }
 
+html.lenis, html.lenis body {
+  height: auto;
+}
+
 html {
-  scroll-behavior: smooth;
-  scroll-padding-top: 100px; /* offset for fixed navbar */
+  scroll-padding-top: 100px;
 }
 
 :root {
@@ -792,17 +795,46 @@ a {
   .footer-left h2 {
     justify-content: center;
   }
+
+  .footer-links a {
+    display: inline;
+    margin: 0 8px;
+  }
 }
 
 @media (max-width: 768px) {
-  .line1 { font-size: 2.4rem; }
-  .line2 { font-size: 2.8rem; }
-  .gradient { font-size: 2.2rem; }
-  .gs-title { font-size: 2rem; }
+  .line1 { font-size: 2.2rem; }
+  .line2 { font-size: 2.6rem; }
+  .title .gradient { font-size: 2rem; }
+  .gs-title { font-size: 1.8rem; }
+
+  .landing {
+    padding: 120px 24px 60px;
+    gap: 40px;
+  }
 
   .nav-inner {
-    padding: 12px 20px;
-    margin-top: 8px;
+    padding: 10px 16px;
+    margin-top: 6px;
+  }
+
+  .nav-link {
+    padding: 6px 10px;
+    font-size: 0.78rem;
+  }
+
+  .nav-cta {
+    padding: 7px 16px;
+    font-size: 0.78rem;
+  }
+
+  .nav-brand {
+    font-size: 1rem;
+  }
+
+  .features-section,
+  .steps-section {
+    padding: 60px 20px;
   }
 
   .features-grid, .steps-grid {
@@ -816,11 +848,117 @@ a {
   }
 
   .get-started {
-    padding: 110px 4% 40px;
+    padding: 100px 16px 40px;
   }
 
   .hero-stats {
-    gap: 32px;
+    gap: 24px;
     flex-wrap: wrap;
+    justify-content: center;
   }
+
+  .hero-stat-value {
+    font-size: 1.4rem;
+  }
+
+  .right img {
+    width: 100%;
+    max-width: 340px;
+  }
+
+  .left p {
+    font-size: 0.95rem;
+  }
+
+  .footer {
+    padding: 40px 20px 20px;
+  }
+
+  .footer-container {
+    gap: 30px;
+  }
+
+  .footer-bottom {
+    font-size: 0.7rem;
+    margin-top: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .line1 { font-size: 1.8rem; }
+  .line2 { font-size: 2rem; }
+  .title .gradient { font-size: 1.6rem; }
+  .gs-title { font-size: 1.5rem; }
+
+  .landing {
+    padding: 110px 16px 40px;
+  }
+
+  .nav-links .nav-link {
+    display: none;
+  }
+
+  .nav-inner {
+    padding: 10px 14px;
+  }
+
+  .hero-badge {
+    font-size: 0.7rem;
+    padding: 5px 12px;
+  }
+
+  .hero-cta-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .cta, .cta-secondary {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+  }
+
+  .hero-stats {
+    flex-direction: column;
+    gap: 16px;
+    align-items: center;
+  }
+
+  .features-section,
+  .steps-section {
+    padding: 40px 16px;
+  }
+
+  .suggestions button {
+    font-size: 0.72rem;
+    padding: 6px 12px;
+  }
+
+  .footer-container {
+    gap: 24px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TEXTAREA & LENIS
+   ═══════════════════════════════════════════════════════════════ */
+textarea::placeholder {
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+textarea::-webkit-scrollbar {
+  width: 4px;
+}
+textarea::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.2);
+  border-radius: 4px;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
 }

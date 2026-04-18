@@ -50,7 +50,14 @@ const Hero = () => {
             </Link>
             <button
               className="cta-secondary"
-              onClick={() => document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })}
+              onClick={() => {
+                const el = document.getElementById("features");
+                if (el && window.__lenis) {
+                  window.__lenis.scrollTo(el, { offset: -80, duration: 1.6 });
+                } else if (el) {
+                  el.scrollIntoView({ behavior: "smooth" });
+                }
+              }}
             >
               Learn More ↓
             </button>

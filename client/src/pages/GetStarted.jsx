@@ -17,6 +17,7 @@ import {
 const GetStarted = () => {
   const [idea, setIdea] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showResults, setShowResults] = useState(false);
   const [activeTab, setActiveTab] = useState("overview"); // overview | steps | risks | sources | raw
 
   const [history, setHistory] = useState([]);
@@ -42,6 +43,7 @@ const GetStarted = () => {
     if (!idea.trim()) return;
 
     setLoading(true);
+    setShowResults(false);
     setActiveTab("overview");
     setRetrievedContext([]);
 
@@ -142,9 +144,12 @@ const GetStarted = () => {
         riskScore: null,
         raw: "Something went wrong. Try again."
       });
+      setLoading(false);
+      setShowResults(true);
     }
 
-    setLoading(false);
+    // Don't hide loader yet — AILoader will call onStreamComplete
+    // setLoading(false) is handled by onStreamComplete callback
   };
 
   // Dynamic Risk Score
@@ -156,46 +161,63 @@ const GetStarted = () => {
     return s.size;
   }, [retrievedContext]);
 
-  // PDF DOWNLOAD
+  // DOWNLOAD — generates a proper styled HTML report
   const downloadReport = () => {
-    const content = `
-═══════════════════════════════════════════════
-  AMIVRE LEGAL — AI Compliance Report
-═══════════════════════════════════════════════
+    const riskColor = riskScore > 70 ? '#ef4444' : riskScore > 40 ? '#f59e0b' : '#10b981';
+    const riskLabel = riskScore > 70 ? 'HIGH RISK' : riskScore > 40 ? 'MEDIUM RISK' : 'LOW RISK';
+    const date = new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' });
+    const time = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
 
-Business Idea: ${idea}
+    const stepsHtml = (result.steps || '').split('\n').filter(s => s.trim()).map((s, i) =>
+      `<tr><td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;color:#6366f1;font-weight:700;width:40px;text-align:center;">${i+1}</td><td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;color:#374151;">${s.replace(/^[\d.•\-)\s]+/, '').trim()}</td></tr>`
+    ).join('');
 
-Business Type: ${result.businessType}
-Licenses: ${result.licenses}
-Risk Score: ${riskScore}/100
+    const risksHtml = (result.risks || '').split('\n').filter(r => r.trim()).map(r =>
+      `<div style="padding:10px 14px;background:#fef2f2;border-left:3px solid #ef4444;border-radius:6px;margin-bottom:8px;color:#991b1b;font-size:13px;">${r.replace(/^[\d.•\-)\s]+/, '').trim()}</div>`
+    ).join('');
 
-Steps:
-${result.steps}
+    const licensesHtml = (result.licenses || '').split(',').map(l =>
+      `<span style="display:inline-block;padding:6px 14px;background:#eef2ff;color:#4338ca;border-radius:20px;font-size:12px;font-weight:600;margin:4px;">${l.trim()}</span>`
+    ).join('');
 
-Risks:
-${result.risks}
+    const sourcesHtml = retrievedContext.map((ctx, i) =>
+      `<tr><td style="padding:8px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#6b7280;">${i+1}</td><td style="padding:8px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;">${ctx.ref ? `<a href="${ctx.ref}" style="color:#4f46e5;">${ctx.source}</a>` : ctx.source}</td><td style="padding:8px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#6b7280;">Page ${ctx.page_number || '?'}</td><td style="padding:8px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#6b7280;">${Math.round((ctx.score || 0) * 100)}%</td></tr>`
+    ).join('');
 
-Cost: ${result.cost}
+    const rawHtml = (result.raw || '').replace(/\n/g, '<br/>').replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" style="color:#4f46e5;">$1</a>');
 
-────────────────────────────────────────────────
-  Full AI Analysis
-────────────────────────────────────────────────
-${result.raw}
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Legal Compliance Report — ${result.businessType}</title>
+    <style>body{font-family:'Segoe UI',Arial,sans-serif;max-width:800px;margin:0 auto;padding:40px;color:#111827;line-height:1.6;}
+    h1{font-size:24px;color:#1e1b4b;margin-bottom:4px;}h2{font-size:16px;color:#4f46e5;text-transform:uppercase;letter-spacing:0.05em;margin-top:36px;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #e5e7eb;}
+    .header{border-bottom:3px solid #4f46e5;padding-bottom:20px;margin-bottom:30px;}
+    .meta{font-size:13px;color:#6b7280;margin-top:4px;}
+    .risk-badge{display:inline-block;padding:6px 16px;border-radius:20px;font-weight:700;font-size:13px;color:white;}
+    table{width:100%;border-collapse:collapse;}th{text-align:left;padding:8px 12px;background:#f8fafc;border-bottom:2px solid #e5e7eb;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;}
+    .footer{margin-top:40px;padding-top:20px;border-top:2px solid #e5e7eb;text-align:center;font-size:12px;color:#9ca3af;}
+    @media print{body{padding:20px;}}</style></head><body>
+    <div class="header">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div><h1>⚖️ AMIVRE Legal</h1><div class="meta">AI Compliance Report · ${date} at ${time}</div></div>
+        <div style="text-align:right;"><span class="risk-badge" style="background:${riskColor};">${riskLabel}: ${riskScore}/100</span></div>
+      </div>
+    </div>
+    <h2>📌 Business Overview</h2>
+    <table><tr><td style="padding:10px;font-weight:600;color:#6b7280;width:140px;">Business Type</td><td style="padding:10px;font-weight:600;">${result.businessType}</td></tr>
+    <tr><td style="padding:10px;font-weight:600;color:#6b7280;">Estimated Cost</td><td style="padding:10px;">${result.cost}</td></tr>
+    <tr><td style="padding:10px;font-weight:600;color:#6b7280;">Business Idea</td><td style="padding:10px;font-size:13px;color:#374151;">${idea}</td></tr></table>
+    <h2>📄 Required Licenses & Compliance</h2><div style="margin:12px 0;">${licensesHtml}</div>
+    <h2>⚙️ Action Plan</h2><table>${stepsHtml}</table>
+    <h2>⚠️ Legal Risks</h2>${risksHtml}
+    <h2>📝 Detailed AI Analysis</h2><div style="background:#f8fafc;padding:20px;border-radius:8px;font-size:13px;color:#374151;line-height:1.8;">${rawHtml}</div>
+    <h2>📚 Referenced Documents (${retrievedContext.length})</h2>
+    <table><thead><tr><th>#</th><th>Document</th><th>Page</th><th>Relevance</th></tr></thead><tbody>${sourcesHtml}</tbody></table>
+    <div class="footer"><p>Generated by <strong>AMIVRE Legal AI</strong> · Powered by Gemini LLM + Qdrant Vector Search</p><p>This report is AI-generated and should be reviewed by a qualified legal professional.</p></div>
+    </body></html>`;
 
-────────────────────────────────────────────────
-  Referenced Documents (${retrievedContext.length})
-────────────────────────────────────────────────
-${retrievedContext.map((ctx, i) => `${i + 1}. ${ctx.source} — Page ${ctx.page_number} (${Math.round(ctx.score * 100)}% match)${ctx.ref ? `\n   URL: ${ctx.ref}` : ""}`).join("\n")}
-
-═══════════════════════════════════════════════
-  Generated by AMIVRE Legal AI · ${new Date().toLocaleDateString()}
-═══════════════════════════════════════════════
-    `;
-
-    const blob = new Blob([content], { type: "text/plain" });
-    const link = document.createElement("a");
+    const blob = new Blob([html], { type: 'text/html' });
+    const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `legal-report-${Date.now()}.txt`;
+    link.download = `AMIVRE-Legal-Report-${result.businessType.replace(/\s+/g, '-')}-${Date.now()}.html`;
     link.click();
   };
 
@@ -208,7 +230,7 @@ ${retrievedContext.map((ctx, i) => `${i + 1}. ${ctx.source} — Page ${ctx.page_
     { id: "raw", label: "Full Report", icon: <BookOpen className="w-4 h-4" /> },
   ];
 
-  const hasResult = result.businessType && !loading;
+  const hasResult = showResults && result.businessType && !loading;
 
   return (
     <div className="get-started" style={{ minHeight: "100vh" }}>
@@ -228,12 +250,9 @@ ${retrievedContext.map((ctx, i) => `${i + 1}. ${ctx.source} — Page ${ctx.page_
         </p>
       </motion.div>
 
-      {/* ══════ INPUT ══════ */}
+      {/* ══════ INPUT — Textarea ══════ */}
       <motion.div
         style={{
-          display: "flex",
-          justifyContent: "center",
-          gap: "12px",
           maxWidth: "700px",
           margin: "0 auto 16px auto",
         }}
@@ -243,58 +262,72 @@ ${retrievedContext.map((ctx, i) => `${i + 1}. ${ctx.source} — Page ${ctx.page_
       >
         <div style={{
           position: "relative",
-          flex: 1,
-          display: "flex",
-          alignItems: "center",
+          borderRadius: "20px",
+          border: "1px solid rgba(99,102,241,0.2)",
+          background: "rgba(30,41,59,0.7)",
+          backdropFilter: "blur(12px)",
+          overflow: "hidden",
+          transition: "border-color 0.3s ease",
         }}>
-          <Sparkles style={{
-            position: "absolute", left: "16px",
-            width: "18px", height: "18px",
-            color: "#6366f1", opacity: 0.6,
-          }} />
-          <input
-            placeholder="Describe your business idea in detail..."
+          <div style={{
+            display: "flex", alignItems: "center", gap: "8px",
+            padding: "12px 18px 0",
+          }}>
+            <Sparkles style={{ width: "16px", height: "16px", color: "#6366f1", opacity: 0.5, flexShrink: 0 }} />
+            <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", fontWeight: 500, letterSpacing: "0.03em" }}>Describe your business idea</span>
+          </div>
+          <textarea
+            placeholder="e.g. I am building a mobile platform where registered doctors can consult patients via video call and issue digital prescriptions. The app will collect and store users' medical histories, Aadhaar details for KYC, and payment information..."
             value={idea}
             onChange={(e) => setIdea(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+            rows={4}
             style={{
               width: "100%",
-              padding: "16px 16px 16px 46px",
-              borderRadius: "16px",
-              border: "1px solid rgba(99,102,241,0.2)",
-              background: "rgba(30,41,59,0.7)",
-              backdropFilter: "blur(12px)",
+              padding: "10px 18px 12px",
+              border: "none",
+              background: "transparent",
               color: "white",
-              fontSize: "15px",
+              fontSize: "14px",
+              lineHeight: 1.7,
               outline: "none",
-              transition: "border-color 0.3s ease",
+              resize: "vertical",
+              minHeight: "80px",
+              maxHeight: "200px",
+              fontFamily: "var(--font-sans)",
             }}
           />
+          <div style={{
+            display: "flex", justifyContent: "space-between", alignItems: "center",
+            padding: "8px 14px 12px",
+            borderTop: "1px solid rgba(255,255,255,0.03)",
+          }}>
+            <span style={{ fontSize: "0.7rem", color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>
+              {idea.length} chars
+            </span>
+            <motion.button
+              onClick={handleSubmit}
+              disabled={loading || !idea.trim()}
+              style={{
+                padding: "9px 22px",
+                borderRadius: "12px",
+                border: "none",
+                background: loading ? "rgba(99,102,241,0.3)" : "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                color: "white",
+                cursor: loading ? "not-allowed" : "pointer",
+                display: "flex", alignItems: "center", gap: "7px",
+                fontWeight: 600, fontSize: "13px",
+                boxShadow: "0 0 20px rgba(99,102,241,0.2)",
+                transition: "all 0.3s ease",
+                fontFamily: "var(--font-sans)",
+              }}
+              whileHover={{ scale: loading ? 1 : 1.04 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Send style={{ width: "14px", height: "14px" }} />
+              {loading ? "Analyzing..." : "Analyze"}
+            </motion.button>
+          </div>
         </div>
-        <motion.button
-          onClick={handleSubmit}
-          disabled={loading || !idea.trim()}
-          style={{
-            padding: "14px 28px",
-            borderRadius: "16px",
-            border: "none",
-            background: loading ? "rgba(99,102,241,0.3)" : "linear-gradient(135deg, #6366f1, #8b5cf6)",
-            color: "white",
-            cursor: loading ? "not-allowed" : "pointer",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            fontWeight: 600,
-            fontSize: "14px",
-            boxShadow: "0 0 30px rgba(99,102,241,0.25)",
-            transition: "all 0.3s ease",
-          }}
-          whileHover={{ scale: loading ? 1 : 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <Send className="w-4 h-4" />
-          {loading ? "Analyzing..." : "Analyze"}
-        </motion.button>
       </motion.div>
 
       {/* ══════ HISTORY ══════ */}
@@ -351,7 +384,13 @@ ${retrievedContext.map((ctx, i) => `${i + 1}. ${ctx.source} — Page ${ctx.page_
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
           >
-            <AILoader />
+            <AILoader
+              retrievedContext={retrievedContext}
+              onStreamComplete={() => {
+                setLoading(false);
+                setShowResults(true);
+              }}
+            />
           </motion.div>
         )}
       </AnimatePresence>
@@ -372,7 +411,7 @@ ${retrievedContext.map((ctx, i) => `${i + 1}. ${ctx.source} — Page ${ctx.page_
 
           {/* ──── TOP ROW: Summary + Gauge ──── */}
           <div style={{
-            display: "grid", gridTemplateColumns: "1fr 1fr 280px",
+            display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
             gap: "20px", width: "100%",
           }}>
             {/* Business Type */}

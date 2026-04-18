@@ -21,9 +21,11 @@ const Navbar = () => {
     e.preventDefault();
 
     if (isHome) {
-      // Already on home — just smooth scroll
+      // Already on home — use Lenis for premium scroll
       const el = document.getElementById(sectionId);
-      if (el) {
+      if (el && window.__lenis) {
+        window.__lenis.scrollTo(el, { offset: -80, duration: 1.6 });
+      } else if (el) {
         el.scrollIntoView({ behavior: "smooth", block: "start" });
       }
     } else {
@@ -31,10 +33,12 @@ const Navbar = () => {
       navigate("/");
       setTimeout(() => {
         const el = document.getElementById(sectionId);
-        if (el) {
+        if (el && window.__lenis) {
+          window.__lenis.scrollTo(el, { offset: -80, duration: 1.6 });
+        } else if (el) {
           el.scrollIntoView({ behavior: "smooth", block: "start" });
         }
-      }, 500);
+      }, 600);
     }
   };
 

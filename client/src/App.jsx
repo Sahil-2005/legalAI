@@ -4,8 +4,9 @@ import {
   Route,
   useLocation
 } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import Lenis from "lenis";
 
 import Home from "./pages/Home";
 import GetStarted from "./pages/GetStarted";
@@ -20,7 +21,7 @@ import "./App.css";
 function ScrollToTop() {
   const { pathname } = useLocation();
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 0, behavior: "instant" });
   }, [pathname]);
   return null;
 }
@@ -42,9 +43,35 @@ function AppContent() {
   const location = useLocation();
   const isHome = location.pathname === "/";
 
+  // Lenis smooth scroll
+  useEffect(() => {
+    const lenis = new Lenis({
+      duration: 1.2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      orientation: "vertical",
+      gestureOrientation: "vertical",
+      smoothWheel: true,
+      wheelMultiplier: 1,
+      touchMultiplier: 2,
+    });
+
+    function raf(time) {
+      lenis.raf(time);
+      requestAnimationFrame(raf);
+    }
+    requestAnimationFrame(raf);
+
+    // Expose lenis globally for hash scroll
+    window.__lenis = lenis;
+
+    return () => {
+      lenis.destroy();
+      window.__lenis = null;
+    };
+  }, []);
+
   return (
     <>
-      {/* Background particles (only on Home) */}
       {isHome && (
         <Particles
           particleColors={["#8b5cf6"]}
@@ -52,8 +79,6 @@ function AppContent() {
           speed={0.08}
         />
       )}
-
-      {/* Splash cursor (only on Home) */}
       {isHome && <SplashCursor />}
 
       <ScrollToTop />
