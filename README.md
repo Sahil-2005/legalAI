@@ -7,6 +7,10 @@
 ![Vite](https://img.shields.io/badge/Vite-5.0-646cff.svg)
 ![Framer Motion](https://img.shields.io/badge/Framer%20Motion-Premium%20Animations-ff0055.svg)
 
+<a href="https://lexagentai.vercel.app/" target="_blank">
+  <img src="https://img.shields.io/badge/Live%20Demo-Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white" alt="Live Demo" />
+</a>
+
 LexAgent is a premium, full-stack Retrieval-Augmented Generation (RAG) platform tailored to assist with **Indian Startup Compliance**. 
 
 It combines a blazing-fast FastAPI vector-search backend with a "billion-dollar SaaS" tier React frontend. It leverages local MiniLM embeddings, Qdrant for semantic search, and the Gemini 2.5 Flash LLM to generate precise, context-aware legal reports based on real compliance documents (Companies Act, DPDP, IT Act, etc.).
