@@ -1,5 +1,5 @@
 import logging
-import requests
+import httpx
 from typing import List, Dict, Any
 from src.core.config import settings
 
@@ -72,7 +72,7 @@ USER'S BUSINESS IDEA / QUERY:
 RESPONSE (OUTPUT ONLY VALID JSON):"""
         return prompt
 
-    def generate_with_grok(self, prompt: str) -> str:
+    async def generate_with_grok(self, prompt: str) -> str:
         """
         Fallback method using xAI's Grok API.
         """
@@ -100,8 +100,9 @@ RESPONSE (OUTPUT ONLY VALID JSON):"""
         
         try:
             logger.info("Sending prompt to Grok API fallback...")
-            response = requests.post(self.grok_endpoint, json=payload, headers=headers)
-            response.raise_for_status()
+            async with httpx.AsyncClient(timeout=120) as client:
+                response = await client.post(self.grok_endpoint, json=payload, headers=headers)
+                response.raise_for_status()
             
             data = response.json()
             choices = data.get("choices", [])
@@ -112,16 +113,16 @@ RESPONSE (OUTPUT ONLY VALID JSON):"""
             message = first_choice.get("message", {})
             return message.get("content", "No text content found in Grok response.")
             
-        except requests.exceptions.HTTPError as http_err:
-            logger.error(f"HTTP Error calling Grok API: {response.text}")
-            raise Exception(f"Grok API Error: Status {response.status_code}")
+        except httpx.HTTPStatusError as http_err:
+            logger.error(f"HTTP Error calling Grok API: {http_err.response.text}")
+            raise Exception(f"Grok API Error: Status {http_err.response.status_code}")
         except Exception as e:
             logger.error(f"Error calling Grok API: {e}")
             raise e
 
-    def generate_legal_advice(self, user_idea: str, context_chunks: List[Dict[str, Any]]) -> str:
+    async def generate_legal_advice(self, user_idea: str, context_chunks: List[Dict[str, Any]]) -> str:
         """
-        Calls the Gemini REST API using requests to get a generated answer.
+        Calls the Gemini REST API using httpx to get a generated answer.
         Falls back to Grok API if Gemini fails.
         """
         prompt = self.build_prompt(user_idea, context_chunks)
@@ -152,8 +153,9 @@ RESPONSE (OUTPUT ONLY VALID JSON):"""
         
         try:
             logger.info("Sending prompt to Gemini API...")
-            response = requests.post(url_with_key, json=payload, headers=headers, timeout=120)
-            response.raise_for_status()
+            async with httpx.AsyncClient(timeout=120) as client:
+                response = await client.post(url_with_key, json=payload, headers=headers)
+                response.raise_for_status()
             
             data = response.json()
             
@@ -161,7 +163,7 @@ RESPONSE (OUTPUT ONLY VALID JSON):"""
             candidates = data.get("candidates", [])
             if not candidates:
                 logger.warning("Gemini returned no candidates, trying Grok...")
-                return self.generate_with_grok(prompt)
+                return await self.generate_with_grok(prompt)
                 
             first_candidate = candidates[0]
             content = first_candidate.get("content", {})
@@ -171,12 +173,12 @@ RESPONSE (OUTPUT ONLY VALID JSON):"""
                 return parts[0].get("text", "")
             
             logger.warning("No text in Gemini response parts, trying Grok...")
-            return self.generate_with_grok(prompt)
+            return await self.generate_with_grok(prompt)
             
-        except (requests.exceptions.RequestException, Exception) as e:
+        except (httpx.RequestError, httpx.HTTPStatusError, Exception) as e:
             logger.error(f"Gemini API failed with error: {e}. Triggering Grok fallback...")
             try:
-                return self.generate_with_grok(prompt)
+                return await self.generate_with_grok(prompt)
             except Exception as grok_e:
                 raise Exception(f"Both Gemini and Grok APIs failed. Gemini error: {str(e)} | Grok error: {str(grok_e)}")
 

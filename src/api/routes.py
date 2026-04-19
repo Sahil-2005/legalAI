@@ -35,7 +35,7 @@ async def analyze_legal(payload: LegalQueryRequest):
             )
 
         # Step 2: Query Gemini API avoiding hallucinations with retrieved context
-        llm_answer = llm_service.generate_legal_advice(
+        llm_answer = await llm_service.generate_legal_advice(
             user_idea=payload.business_idea,
             context_chunks=context_chunks
         )
