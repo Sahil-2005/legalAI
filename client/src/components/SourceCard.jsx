@@ -50,7 +50,7 @@ const SourceCard = ({ source, page_number, score, refUrl, index, delay = 0 }) =>
       </div>
 
       {/* Info */}
-      <div style={{ flex: 1, minWidth: 0 }}>
+      <div className="flex-1 min-w-0 pr-2">
         <p style={{
           fontSize: "13px", fontWeight: 600, color: "#e2e8f0",
           whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",

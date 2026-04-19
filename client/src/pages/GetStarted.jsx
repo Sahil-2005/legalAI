@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, cloneElement } from "react";
 import { downloadReport } from "../utils/reportGenerator";
 import { analyzeLegal } from "../api/api";
 import { OverviewTab, StepsTab, RisksTab, SourcesTab, RawTab } from "../components/tabs/TabComponents";
@@ -358,22 +358,14 @@ const GetStarted = () => {
       {/* ══════ RESULT DASHBOARD ══════ */}
       {hasResult && (
         <motion.div
-          style={{
-            display: "flex", flexDirection: "column", gap: "24px",
-            marginTop: "40px", textAlign: "left",
-            alignItems: "center", width: "100%",
-            maxWidth: "1100px", margin: "40px auto 60px auto",
-          }}
+          className="flex flex-col gap-6 md:gap-10 w-full max-w-6xl mx-auto mt-10 mb-20 px-4 md:px-0"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
         >
 
           {/* ──── TOP ROW: Summary + Gauge ──── */}
-          <div style={{
-            display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-            gap: "20px", width: "100%",
-          }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 w-full">
             {/* Business Type */}
             <motion.div
               style={{
@@ -446,13 +438,7 @@ const GetStarted = () => {
 
           {/* ──── LICENSES BADGES ──── */}
           <motion.div
-            style={{
-              width: "100%",
-              background: "rgba(30,41,59,0.3)",
-              border: "1px solid rgba(51,65,85,0.5)",
-              padding: "28px 32px",
-              borderRadius: "24px",
-            }}
+            className="w-full bg-slate-900/30 border border-slate-700/50 p-6 md:p-8 rounded-[24px]"
             initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.8 }}
           >
@@ -489,44 +475,25 @@ const GetStarted = () => {
           </motion.div>
 
           {/* ──── TAB NAVIGATION ──── */}
-          <motion.div
-            style={{
-              display: "flex", gap: "6px", width: "100%",
-              background: "rgba(15,23,42,0.6)",
-              backdropFilter: "blur(12px)",
-              border: "1px solid rgba(51,65,85,0.4)",
-              borderRadius: "16px", padding: "6px",
-            }}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.4 }}
-          >
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                style={{
-                  flex: 1,
-                  display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
-                  padding: "12px 16px",
-                  borderRadius: "12px",
-                  border: "none",
-                  background: activeTab === tab.id
-                    ? "linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.15))"
-                    : "transparent",
-                  color: activeTab === tab.id ? "#c7d2fe" : "#64748b",
-                  fontWeight: activeTab === tab.id ? 600 : 400,
-                  fontSize: "13px",
-                  cursor: "pointer",
-                  transition: "all 0.25s ease",
-                  borderBottom: activeTab === tab.id ? "2px solid #6366f1" : "2px solid transparent",
-                }}
-              >
-                {tab.icon}
-                {tab.label}
-              </button>
-            ))}
-          </motion.div>
+            <div className="flex gap-2 w-full bg-slate-950/40 backdrop-blur-xl border border-slate-700/30 rounded-2xl p-1.5 overflow-x-auto no-scrollbar scroll-smooth">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex-none md:flex-1 flex items-center justify-center gap-2.5 px-5 py-2.5 rounded-xl border-none cursor-pointer transition-all duration-300 whitespace-nowrap min-w-[130px] md:min-w-0 ${
+                    activeTab === tab.id 
+                      ? "bg-indigo-500/20 text-indigo-100 shadow-lg shadow-indigo-500/10 ring-1 ring-indigo-500/30" 
+                      : "bg-transparent text-slate-500 hover:text-slate-400 hover:bg-slate-800/20"
+                  }`}
+                  style={{ fontSize: "13px", fontWeight: activeTab === tab.id ? 600 : 500 }}
+                >
+                  <div className={`p-1 rounded-lg transition-colors ${activeTab === tab.id ? "bg-indigo-400/20" : "bg-slate-800/40"}`}>
+                    {cloneElement(tab.icon, { size: 15, strokeWidth: 2.5, className: activeTab === tab.id ? "text-indigo-300" : "text-slate-600" })}
+                  </div>
+                  {tab.label}
+                </button>
+              ))}
+            </div>
 
           {/* ──── TAB CONTENT ──── */}
           <AnimatePresence mode="wait">

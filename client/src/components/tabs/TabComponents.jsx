@@ -9,19 +9,19 @@ import remarkGfm from "remark-gfm";
 export const OverviewTab = ({ result, riskScore }) => (
   <motion.div
     key="overview"
-    style={{ width: "100%", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px" }}
+    className="w-full grid grid-cols-1 lg:grid-cols-2 gap-6"
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
     exit={{ opacity: 0, y: -10 }}
     transition={{ duration: 0.3 }}
   >
-    <div style={{ background: "rgba(30,41,59,0.3)", border: "1px solid rgba(51,65,85,0.4)", borderRadius: "20px", padding: "28px" }}>
+    <div className="bg-slate-800/30 border border-slate-700/40 rounded-[24px] p-5 md:p-7">
       <h3 style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "16px", fontWeight: 700, color: "white", marginBottom: "16px", borderBottom: "1px solid rgba(51,65,85,0.5)", paddingBottom: "12px" }}>
         ⚙️ Action Plan
       </h3>
       <Timeline stepsString={result.steps} initialDelay={0.2} />
     </div>
-    <div style={{ background: "rgba(30,41,59,0.3)", border: "1px solid rgba(51,65,85,0.4)", borderRadius: "20px", padding: "28px" }}>
+    <div className="bg-slate-800/30 border border-slate-700/40 rounded-[20px] p-6 md:p-7">
       <h3 style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "16px", fontWeight: 700, color: "#fb7185", marginBottom: "16px", borderBottom: "1px solid rgba(51,65,85,0.5)", paddingBottom: "12px" }}>
         <AlertTriangle strokeWidth={2.5} style={{ width: "18px", height: "18px" }} />
         Legal Vulnerabilities
@@ -46,7 +46,7 @@ export const OverviewTab = ({ result, riskScore }) => (
 export const StepsTab = ({ result }) => (
   <motion.div
     key="steps"
-    style={{ width: "100%", background: "rgba(30,41,59,0.3)", border: "1px solid rgba(51,65,85,0.4)", borderRadius: "20px", padding: "32px" }}
+    className="w-full bg-slate-800/30 border border-slate-700/40 rounded-[24px] p-5 md:p-8"
     initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}
   >
     <h3 style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "18px", fontWeight: 700, color: "white", marginBottom: "20px", borderBottom: "1px solid rgba(51,65,85,0.5)", paddingBottom: "12px" }}>
@@ -60,7 +60,7 @@ export const StepsTab = ({ result }) => (
 export const RisksTab = ({ result, riskScore }) => (
   <motion.div
     key="risks"
-    style={{ width: "100%", background: "rgba(30,41,59,0.3)", border: "1px solid rgba(51,65,85,0.4)", borderRadius: "20px", padding: "32px" }}
+    className="w-full bg-slate-800/30 border border-slate-700/40 rounded-[24px] p-5 md:p-8"
     initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}
   >
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px", borderBottom: "1px solid rgba(51,65,85,0.5)", paddingBottom: "12px" }}>
@@ -93,12 +93,7 @@ export const RisksTab = ({ result, riskScore }) => (
 export const SourcesTab = ({ retrievedContext, uniqueSources }) => (
   <motion.div
     key="sources"
-    style={{
-      width: "100%",
-      background: "rgba(30,41,59,0.3)",
-      border: "1px solid rgba(51,65,85,0.4)",
-      borderRadius: "20px", padding: "32px",
-    }}
+    className="w-full bg-slate-800/30 border border-slate-700/40 rounded-[24px] p-5 md:p-8"
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
     exit={{ opacity: 0, y: -10 }}
@@ -126,11 +121,7 @@ export const SourcesTab = ({ retrievedContext, uniqueSources }) => (
     </div>
 
     {retrievedContext.length > 0 ? (
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "1fr 1fr",
-        gap: "10px",
-      }}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {retrievedContext.map((ctx, idx) => (
           <SourceCard
             key={idx}
@@ -154,7 +145,7 @@ export const SourcesTab = ({ retrievedContext, uniqueSources }) => (
 export const RawTab = ({ result }) => (
   <motion.div
     key="raw"
-    style={{ width: "100%", background: "rgba(30,41,59,0.8)", border: "1px solid rgba(51,65,85,0.4)", borderRadius: "20px", padding: "40px", boxShadow: "0 0 60px rgba(30,41,59,0.4)" }}
+    className="w-full bg-slate-800/80 border border-slate-700/40 rounded-[24px] p-5 md:p-10 backdrop-blur-md"
     initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}
   >
     <h3 style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "20px", fontWeight: 700, color: "#c4b5fd", marginBottom: "24px" }}>
