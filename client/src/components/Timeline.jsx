@@ -72,8 +72,8 @@ const TimelineItem = ({ stepText, index, totalDelay }) => {
 export const Timeline = ({ stepsString, initialDelay = 1.2 }) => {
   if (!stepsString) return <p style={{ color: "var(--text-muted)", fontStyle: "italic", marginTop: "8px" }}>No steps provided.</p>;
 
-  const stepsList = stepsString.split('\n')
-    .map(s => s.replace(/^•|-/, '').trim())
+  const stepsList = (Array.isArray(stepsString) ? stepsString : String(stepsString || "").split('\n'))
+    .map(s => typeof s === 'string' ? s.replace(/^•|-/, '').trim() : String(s))
     .filter(s => s.length > 0);
 
   return (

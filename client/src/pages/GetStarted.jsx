@@ -80,13 +80,27 @@ const GetStarted = () => {
         } catch (initialErr) {
           console.warn("JSON Parse Failed. Engaging Robust Regex Extraction...", initialErr);
 
+          const keys = ["businessType", "licenses", "steps", "risks", "riskScore", "cost", "raw"];
+
           const extractField = (field, isNum = false) => {
-            if (isNum) {
-              const match = cleanText.match(new RegExp(`"${field}"\\s*:\\s*(\\d+)`));
-              return match ? parseInt(match[1]) : null;
+            const otherKeys = keys.filter(k => k !== field).join('|');
+            const regex = new RegExp(`"${field}"\\s*:\\s*(.*?)(?=\\s*"(${otherKeys})"\\s*:|$)`, 's');
+            const match = cleanText.match(regex);
+
+            if (match) {
+              let val = match[1].trim();
+              if (isNum) {
+                const numMatch = val.match(/\\d+/);
+                return numMatch ? parseInt(numMatch[0]) : null;
+              }
+              // Clean up JSON syntax artifacts
+              val = val.replace(/^"/, ''); // remove leading quote
+              val = val.replace(/,$/, '').trim(); // remove trailing comma
+              val = val.replace(/}$/, '').trim(); // remove trailing brace
+              val = val.replace(/"$/, '').trim(); // remove trailing quote
+
+              return val.replace(/\\n/g, '\n').replace(/\\"/g, '"');
             }
-            const match = cleanText.match(new RegExp(`"${field}"\\s*:\\s*"(.*?)"(?:\\s*,\\s*"|\\s*})`, 's'));
-            if (match) return match[1].replace(/\\n/g, '\n').replace(/\\"/g, '"');
             return null;
           };
 
@@ -96,14 +110,13 @@ const GetStarted = () => {
             steps: extractField("steps"),
             risks: extractField("risks"),
             riskScore: extractField("riskScore", true),
-            cost: extractField("cost")
+            cost: extractField("cost"),
+            raw: extractField("raw")
           };
 
-          const rawMatch = cleanText.match(/"raw"\s*:\s*"(.*)/s);
-          if (rawMatch) {
-            parsed.raw = rawMatch[1].replace(/\"\s*}$/, '').replace(/\\n/g, '\n').replace(/\\"/g, '"');
-          } else {
-            parsed.raw = cleanText;
+          if (!parsed.raw) {
+            // If raw wasn't found (truncated before generation), use cleaned up full text
+            parsed.raw = cleanText.replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/[{}"]/g, '');
           }
         }
       } catch (parseErr) {
@@ -169,7 +182,7 @@ const GetStarted = () => {
     const time = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
 
     const stepsHtml = (result.steps || '').split('\n').filter(s => s.trim()).map((s, i) =>
-      `<tr><td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;color:#6366f1;font-weight:700;width:40px;text-align:center;">${i+1}</td><td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;color:#374151;">${s.replace(/^[\d.•\-)\s]+/, '').trim()}</td></tr>`
+      `<tr><td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;color:#6366f1;font-weight:700;width:40px;text-align:center;">${i + 1}</td><td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;color:#374151;">${s.replace(/^[\d.•\-)\s]+/, '').trim()}</td></tr>`
     ).join('');
 
     const risksHtml = (result.risks || '').split('\n').filter(r => r.trim()).map(r =>
@@ -181,7 +194,7 @@ const GetStarted = () => {
     ).join('');
 
     const sourcesHtml = retrievedContext.map((ctx, i) =>
-      `<tr><td style="padding:8px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#6b7280;">${i+1}</td><td style="padding:8px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;">${ctx.ref ? `<a href="${ctx.ref}" style="color:#4f46e5;">${ctx.source}</a>` : ctx.source}</td><td style="padding:8px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#6b7280;">Page ${ctx.page_number || '?'}</td><td style="padding:8px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#6b7280;">${Math.round((ctx.score || 0) * 100)}%</td></tr>`
+      `<tr><td style="padding:8px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#6b7280;">${i + 1}</td><td style="padding:8px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;">${ctx.ref ? `<a href="${ctx.ref}" style="color:#4f46e5;">${ctx.source}</a>` : ctx.source}</td><td style="padding:8px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#6b7280;">Page ${ctx.page_number || '?'}</td><td style="padding:8px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#6b7280;">${Math.round((ctx.score || 0) * 100)}%</td></tr>`
     ).join('');
 
     const rawHtml = (result.raw || '').replace(/\n/g, '<br/>').replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" style="color:#4f46e5;">$1</a>');
@@ -504,7 +517,7 @@ const GetStarted = () => {
               Essential Licenses & Compliance
             </h3>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}>
-              {result.licenses ? result.licenses.split(',').map((lic, i) => (
+              {result.licenses ? (Array.isArray(result.licenses) ? result.licenses : String(result.licenses).split(',')).map((lic, i) => (
                 <motion.div
                   key={i}
                   style={{
@@ -522,7 +535,7 @@ const GetStarted = () => {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ type: "spring", delay: 1.2 + (i * 0.12) }}
                 >
-                  {lic.trim()}
+                  {typeof lic === 'string' ? lic.trim() : String(lic)}
                 </motion.div>
               )) : <span style={{ color: "#475569" }}>Evaluating...</span>}
             </div>
@@ -614,7 +627,7 @@ const GetStarted = () => {
                     Legal Vulnerabilities
                   </h3>
                   <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "12px" }}>
-                    {result.risks ? result.risks.split('\n').map(r => r.trim()).filter(r => r.length > 0).map((risk, idx) => (
+                    {result.risks ? (Array.isArray(result.risks) ? result.risks : String(result.risks || '').split('\n')).map(r => typeof r === 'string' ? r.trim() : String(r)).filter(r => r.length > 0).map((risk, idx) => (
                       <motion.div
                         key={idx}
                         style={{
@@ -638,9 +651,17 @@ const GetStarted = () => {
                           background: "rgba(244,63,94,0.4)",
                         }} />
                         <AlertTriangle style={{ width: "16px", height: "16px", color: "#fb7185", flexShrink: 0, marginTop: "2px" }} />
-                        <p style={{ color: "#cbd5e1", fontSize: "13px", lineHeight: 1.6, margin: 0 }}>
-                          {risk.replace(/^[\d.•\-)\s]+/, '').trim()}
-                        </p>
+                        <div style={{ color: "#cbd5e1", fontSize: "13px", lineHeight: 1.6, margin: 0 }}>
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                              p: ({ children }) => <span style={{ margin: 0 }}>{children}</span>,
+                              a: ({ href, children }) => <a href={href} target="_blank" rel="noopener noreferrer" style={{ color: "#818cf8", textDecoration: "underline" }}>{children}</a>,
+                            }}
+                          >
+                            {risk.replace(/^[\d.•\-)\s]+/, '').trim()}
+                          </ReactMarkdown>
+                        </div>
                       </motion.div>
                     )) : null}
                   </div>
@@ -713,7 +734,7 @@ const GetStarted = () => {
                   </div>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-                  {result.risks ? result.risks.split('\n').map(r => r.trim()).filter(r => r.length > 0).map((risk, idx) => (
+                  {result.risks ? (Array.isArray(result.risks) ? result.risks : String(result.risks || '').split('\n')).map(r => typeof r === 'string' ? r.trim() : String(r)).filter(r => r.length > 0).map((risk, idx) => (
                     <motion.div
                       key={idx}
                       style={{
@@ -748,8 +769,8 @@ const GetStarted = () => {
                         <ReactMarkdown
                           remarkPlugins={[remarkGfm]}
                           components={{
-                            p: ({children}) => <p style={{ color: "#cbd5e1", fontSize: "14px", lineHeight: 1.7, margin: 0 }}>{children}</p>,
-                            a: ({href, children}) => <a href={href} target="_blank" rel="noopener noreferrer" style={{ color: "#818cf8", textDecoration: "underline" }}>{children}</a>,
+                            p: ({ children }) => <p style={{ color: "#cbd5e1", fontSize: "14px", lineHeight: 1.7, margin: 0 }}>{children}</p>,
+                            a: ({ href, children }) => <a href={href} target="_blank" rel="noopener noreferrer" style={{ color: "#818cf8", textDecoration: "underline" }}>{children}</a>,
                           }}
                         >
                           {risk.replace(/^[\d.•\-)\s]+/, '').trim()}
@@ -858,11 +879,11 @@ const GetStarted = () => {
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     components={{
-                      h1: ({children}) => <h1 style={{ color: "#e2e8f0", fontSize: "22px", fontWeight: 700, marginTop: "24px", borderBottom: "1px solid rgba(51,65,85,0.5)", paddingBottom: "8px" }}>{children}</h1>,
-                      h2: ({children}) => <h2 style={{ color: "#e2e8f0", fontSize: "18px", fontWeight: 600, marginTop: "20px" }}>{children}</h2>,
-                      h3: ({children}) => <h3 style={{ color: "#c7d2fe", fontSize: "16px", fontWeight: 600, marginTop: "16px" }}>{children}</h3>,
-                      p: ({children}) => <p style={{ color: "#cbd5e1", fontSize: "14px", lineHeight: 1.9, marginBottom: "12px" }}>{children}</p>,
-                      a: ({href, children}) => (
+                      h1: ({ children }) => <h1 style={{ color: "#e2e8f0", fontSize: "22px", fontWeight: 700, marginTop: "24px", borderBottom: "1px solid rgba(51,65,85,0.5)", paddingBottom: "8px" }}>{children}</h1>,
+                      h2: ({ children }) => <h2 style={{ color: "#e2e8f0", fontSize: "18px", fontWeight: 600, marginTop: "20px" }}>{children}</h2>,
+                      h3: ({ children }) => <h3 style={{ color: "#c7d2fe", fontSize: "16px", fontWeight: 600, marginTop: "16px" }}>{children}</h3>,
+                      p: ({ children }) => <p style={{ color: "#cbd5e1", fontSize: "14px", lineHeight: 1.9, marginBottom: "12px" }}>{children}</p>,
+                      a: ({ href, children }) => (
                         <a
                           href={href}
                           target="_blank"
@@ -878,9 +899,9 @@ const GetStarted = () => {
                           {children}
                         </a>
                       ),
-                      li: ({children}) => <li style={{ color: "#cbd5e1", marginBottom: "6px" }}>{children}</li>,
-                      strong: ({children}) => <strong style={{ color: "#f1f5f9", fontWeight: 600 }}>{children}</strong>,
-                      blockquote: ({children}) => (
+                      li: ({ children }) => <li style={{ color: "#cbd5e1", marginBottom: "6px" }}>{children}</li>,
+                      strong: ({ children }) => <strong style={{ color: "#f1f5f9", fontWeight: 600 }}>{children}</strong>,
+                      blockquote: ({ children }) => (
                         <blockquote style={{
                           borderLeft: "3px solid #6366f1",
                           paddingLeft: "16px", margin: "16px 0",

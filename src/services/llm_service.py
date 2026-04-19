@@ -14,7 +14,7 @@ class LLMService:
         self.api_key = settings.GEMINI_API_KEY
         self.grok_api_key = settings.GROK_API_KEY
         # Using the standard gemini-2.5-flash or pro endpoint
-        self.endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
+        self.endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
         self.grok_endpoint = "https://api.groq.com/openai/v1/chat/completions"
         
         if not self.api_key or self.api_key == "REPLACE_ME":
@@ -55,13 +55,13 @@ INSTRUCTIONS:
 4. Provide citations strictly adhering to the CRITICAL CITATION RULE above.
 5. You MUST return your response as a valid JSON object matching exactly this schema. IMPORTANT: You must escape any newlines in your strings using \\n so that JSON.parse() does not fail!
 {{
-  "businessType": "Short classification of the business",
+  "businessType": "Short classification of the business (max 5 words)",
   "licenses": "Comma separated list of required licenses and compliances",
-  "steps": "Bullet points or short text of actionable steps",
-  "risks": "Main legal risks involved",
+  "steps": "Maximum 5 concise bullet points of actionable steps",
+  "risks": "Maximum 3 main legal risks involved",
   "riskScore": Integer between 0 and 100 representing risk severity,
-  "cost": "Estimated cost or statement about cost",
-  "raw": "A detailed explanation of the legal advice formatted in Markdown"
+  "cost": "Estimated cost or statement about cost in 1 sentence",
+  "raw": "A concise summary of the legal advice formatted in Markdown (maximum 2 paragraphs)"
 }}
 
 CONTEXT CHUNKS:{context_text}
@@ -141,7 +141,7 @@ RESPONSE (OUTPUT ONLY VALID JSON):"""
                 "temperature": 0.1,
                 "topK": 40,
                 "topP": 0.95,
-                "maxOutputTokens": 4096,
+                "maxOutputTokens": 8192,
                 "responseMimeType": "application/json"
             }
         }
@@ -152,7 +152,7 @@ RESPONSE (OUTPUT ONLY VALID JSON):"""
         
         try:
             logger.info("Sending prompt to Gemini API...")
-            response = requests.post(url_with_key, json=payload, headers=headers, timeout=15)
+            response = requests.post(url_with_key, json=payload, headers=headers, timeout=120)
             response.raise_for_status()
             
             data = response.json()
