@@ -1,3 +1,4 @@
+import logging
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 from typing import List, Dict, Any
@@ -6,6 +7,7 @@ from src.services.qdrant_client import semantic_search
 from src.services.llm_service import llm_service
 
 router = APIRouter(prefix="/api/v1")
+logger = logging.getLogger(__name__)
 
 class LegalQueryRequest(BaseModel):
     """Payload sent by the User inquiring about legal compliance."""
@@ -24,8 +26,18 @@ async def analyze_legal(payload: LegalQueryRequest):
     2. Sends the contexts + user's query to external LLM to formulate valid legal advice.
     """
     try:
-        # Step 1: Retrieve context chunks
-        context_chunks = semantic_search.search_legal_context(query=payload.business_idea, top_k=18)
+        # Step A: Expand short user input into broader legal-regulatory retrieval text.
+        retrieval_query = payload.business_idea
+        try:
+            retrieval_query = await llm_service.expand_legal_query(payload.business_idea)
+        except Exception as expansion_error:
+            logger.warning(
+                "Query expansion failed; falling back to original user query. Error: %s",
+                str(expansion_error)
+            )
+
+        # Step B: Retrieve context chunks using expanded query to broaden recall.
+        context_chunks = semantic_search.search_legal_context(query=retrieval_query, top_k=18)
         
         if not context_chunks:
             # Although Qdrant will usually return *something* via cosine similarity, handle edge cases
@@ -34,7 +46,7 @@ async def analyze_legal(payload: LegalQueryRequest):
                 retrieved_context=[]
             )
 
-        # Step 2: Query Gemini API avoiding hallucinations with retrieved context
+        # Step C: Generate final advice for the original specific user query using enriched context.
         llm_answer = await llm_service.generate_legal_advice(
             user_idea=payload.business_idea,
             context_chunks=context_chunks

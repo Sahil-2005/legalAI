@@ -72,6 +72,70 @@ USER'S BUSINESS IDEA / QUERY:
 RESPONSE (OUTPUT ONLY VALID JSON):"""
         return prompt
 
+    async def expand_legal_query(self, user_idea: str) -> str:
+        """
+        Expands a short business idea into a compact legal-regulatory keyword paragraph
+        optimized for vector retrieval over Indian startup compliance documents.
+        """
+        expansion_prompt = f"""You are a legal query expansion engine for semantic vector search in a RAG system.
+
+Task:
+Expand the user's short startup idea into exactly ONE compact paragraph containing relevant Indian legal and regulatory search terms.
+
+Strict output rules:
+1. Return only one descriptive paragraph, not bullets, not JSON, not markdown.
+2. Keep it concise for embedding generation: around 90-150 words.
+3. Include domain-specific compliance vocabulary, related obligations, and nearby regulatory categories likely needed for holistic legal analysis.
+4. Prefer concrete terms such as registrations, taxes, licenses, labor, data/privacy, contracts, labeling, safety, local permits, sector regulators, and penalties where applicable.
+5. Do not ask questions, do not add disclaimers, and do not use conversational language.
+
+User idea: {user_idea}
+
+Expanded legal retrieval paragraph:"""
+
+        url_with_key = f"{self.endpoint}?key={self.api_key}"
+        payload = {
+            "contents": [
+                {
+                    "parts": [
+                        {"text": expansion_prompt}
+                    ]
+                }
+            ],
+            "generationConfig": {
+                "temperature": 0.1,
+                "topK": 40,
+                "topP": 0.9,
+                "maxOutputTokens": 512
+            }
+        }
+        headers = {
+            "Content-Type": "application/json"
+        }
+
+        try:
+            logger.info("Expanding short legal query for retrieval...")
+            async with httpx.AsyncClient(timeout=60) as client:
+                response = await client.post(url_with_key, json=payload, headers=headers)
+                response.raise_for_status()
+
+            data = response.json()
+            candidates = data.get("candidates", [])
+            if not candidates:
+                raise Exception("Gemini returned no candidates for query expansion.")
+
+            content = candidates[0].get("content", {})
+            parts = content.get("parts", [])
+            expanded_text = parts[0].get("text", "").strip() if parts else ""
+            if not expanded_text:
+                raise Exception("Gemini returned empty expansion text.")
+
+            # Normalize whitespace so embeddings are consistent and compact.
+            return " ".join(expanded_text.split())
+        except (httpx.RequestError, httpx.HTTPStatusError, Exception) as e:
+            logger.error(f"Query expansion failed: {e}")
+            raise Exception("Failed to expand legal query for retrieval.")
+
     async def generate_with_grok(self, prompt: str) -> str:
         """
         Fallback method using xAI's Grok API.
