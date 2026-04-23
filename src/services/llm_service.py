@@ -1,4 +1,6 @@
 import logging
+import json
+import re
 import httpx
 from typing import List, Dict, Any
 from src.core.config import settings
@@ -72,26 +74,27 @@ USER'S BUSINESS IDEA / QUERY:
 RESPONSE (OUTPUT ONLY VALID JSON):"""
         return prompt
 
-    async def expand_legal_query(self, user_idea: str) -> str:
+    async def expand_legal_query(self, user_idea: str) -> List[str]:
         """
-        Expands a short business idea into a compact legal-regulatory keyword paragraph
-        optimized for vector retrieval over Indian startup compliance documents.
+        Expands a short business idea into exactly three targeted sub-queries
+        optimized for multi-query vector retrieval.
         """
         expansion_prompt = f"""You are a legal query expansion engine for semantic vector search in a RAG system.
 
 Task:
-Expand the user's short startup idea into exactly ONE compact paragraph containing relevant Indian legal and regulatory search terms.
+Generate exactly 3 retrieval sub-queries for Indian startup legal compliance.
 
 Strict output rules:
-1. Return only one descriptive paragraph, not bullets, not JSON, not markdown.
-2. Keep it concise for embedding generation: around 90-150 words.
-3. Include domain-specific compliance vocabulary, related obligations, and nearby regulatory categories likely needed for holistic legal analysis.
-4. Prefer concrete terms such as registrations, taxes, licenses, labor, data/privacy, contracts, labeling, safety, local permits, sector regulators, and penalties where applicable.
-5. Do not ask questions, do not add disclaimers, and do not use conversational language.
+1. Return ONLY a valid JSON array of strings with exactly 3 elements.
+2. Do not return markdown, code fences, commentary, or extra keys.
+3. Query 1 must focus on industry-specific regulations (e.g., Food, Health, sector licenses, packaging/safety).
+4. Query 2 must focus on taxation and corporate structure (e.g., GST, Companies Act, registrations, invoicing, accounting compliance).
+5. Query 3 must focus on labor, contracts, and data privacy.
+6. Each query should be specific, keyword-dense, and optimized for legal document retrieval in India.
 
 User idea: {user_idea}
 
-Expanded legal retrieval paragraph:"""
+Output JSON array only:"""
 
         url_with_key = f"{self.endpoint}?key={self.api_key}"
         payload = {
@@ -113,8 +116,69 @@ Expanded legal retrieval paragraph:"""
             "Content-Type": "application/json"
         }
 
+        def _parse_sub_queries(raw_text: str) -> List[str]:
+            cleaned = (raw_text or "").strip()
+            if not cleaned:
+                raise ValueError("Empty expansion response")
+
+            # Handle markdown wrapped JSON, e.g. ```json [...] ```
+            cleaned = re.sub(r"^```(?:json)?\\s*", "", cleaned, flags=re.IGNORECASE)
+            cleaned = re.sub(r"\\s*```$", "", cleaned)
+
+            array_match = re.search(r"\[.*\]", cleaned, flags=re.DOTALL)
+            if array_match:
+                cleaned = array_match.group(0)
+
+            parsed = json.loads(cleaned)
+            if not isinstance(parsed, list):
+                raise ValueError("Expansion output is not a JSON array")
+
+            queries = [str(item).strip() for item in parsed if isinstance(item, str) and str(item).strip()]
+            if len(queries) != 3:
+                raise ValueError("Expansion output must contain exactly 3 non-empty string queries")
+
+            return queries
+
+        async def _expand_with_grok() -> List[str]:
+            grok_headers = {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {self.grok_api_key}"
+            }
+            grok_payload = {
+                "model": "llama-3.3-70b-versatile",
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": (
+                            "You are a legal query expansion engine for semantic vector search in a RAG system. "
+                            "Return only a valid JSON array of exactly 3 strings. "
+                            "Do not include markdown or commentary."
+                        )
+                    },
+                    {
+                        "role": "user",
+                        "content": expansion_prompt
+                    }
+                ],
+                "temperature": 0.1,
+                "max_tokens": 300
+            }
+
+            logger.info("Gemini query expansion failed. Trying Grok fallback for expansion...")
+            async with httpx.AsyncClient(timeout=60) as client:
+                response = await client.post(self.grok_endpoint, json=grok_payload, headers=grok_headers)
+                response.raise_for_status()
+
+            data = response.json()
+            choices = data.get("choices", [])
+            if not choices:
+                raise Exception("Grok returned no choices for query expansion.")
+
+            message = choices[0].get("message", {})
+            return _parse_sub_queries(message.get("content", ""))
+
         try:
-            logger.info("Expanding short legal query for retrieval...")
+            logger.info("Expanding short legal query for retrieval using Gemini...")
             async with httpx.AsyncClient(timeout=60) as client:
                 response = await client.post(url_with_key, json=payload, headers=headers)
                 response.raise_for_status()
@@ -126,15 +190,14 @@ Expanded legal retrieval paragraph:"""
 
             content = candidates[0].get("content", {})
             parts = content.get("parts", [])
-            expanded_text = parts[0].get("text", "").strip() if parts else ""
-            if not expanded_text:
-                raise Exception("Gemini returned empty expansion text.")
-
-            # Normalize whitespace so embeddings are consistent and compact.
-            return " ".join(expanded_text.split())
-        except (httpx.RequestError, httpx.HTTPStatusError, Exception) as e:
-            logger.error(f"Query expansion failed: {e}")
-            raise Exception("Failed to expand legal query for retrieval.")
+            return _parse_sub_queries(parts[0].get("text", "") if parts else "")
+        except Exception as gemini_error:
+            logger.error(f"Query expansion failed with Gemini: {gemini_error}")
+            try:
+                return await _expand_with_grok()
+            except Exception as grok_error:
+                logger.error(f"Query expansion failed with Grok fallback: {grok_error}")
+                return [user_idea]
 
     async def generate_with_grok(self, prompt: str) -> str:
         """
