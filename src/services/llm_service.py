@@ -1,4 +1,6 @@
 import logging
+import json
+import re
 import httpx
 from typing import List, Dict, Any
 from src.core.config import settings
@@ -50,10 +52,13 @@ If a URL is empty, just use the document name and page. Do not hallucinate URLs.
 
 INSTRUCTIONS:
 1. ONLY utilize the information provided in the Context Chunks to formulate your response.
-2. If the user's query cannot be answered using the given context, clearly state: "I cannot answer this question based on the provided context." Do not hallucinate or rely on outside knowledge.
-3. Be professional, concise, and highlight specific obligations or laws mentioned.
-4. Provide citations strictly adhering to the CRITICAL CITATION RULE above.
-5. You MUST return your response as a valid JSON object matching exactly this schema. IMPORTANT: You must escape any newlines in your strings using \\n so that JSON.parse() does not fail!
+2. SMART 360-DEGREE COMPLIANCE (CRITICAL): Review all provided Context Chunks, but ONLY extract and apply compliances that are explicitly relevant to the user's specific business idea. 
+   - FORBIDDEN DOMAINS: You are STRICTLY FORBIDDEN from mentioning FSSAI, Food Safety, or Food Labelling regulations UNLESS the user explicitly uses words like "food", "beverage", "restaurant", "grocery", "supplements", or "kitchen" in their idea. 
+   - If the user is building a generic tech, software, or e-commerce platform without mentioning food, you MUST ignore all FSSAI chunks provided to you.
+3. If the user's query cannot be answered using the given context, clearly state: "I cannot answer this question based on the provided context." Do not hallucinate or rely on outside knowledge.
+4. Be professional, concise, and highlight specific obligations or laws mentioned.
+5. Provide citations strictly adhering to the CRITICAL CITATION RULE above.
+6. You MUST return your response as a valid JSON object matching exactly this schema. IMPORTANT: You must escape any newlines in your strings using \\n so that JSON.parse() does not fail!
 {{
   "businessType": "Short classification of the business (max 5 words)",
   "licenses": "Comma separated list of required licenses and compliances",
@@ -71,6 +76,131 @@ USER'S BUSINESS IDEA / QUERY:
 
 RESPONSE (OUTPUT ONLY VALID JSON):"""
         return prompt
+
+    async def expand_legal_query(self, user_idea: str) -> List[str]:
+        """
+        Expands a short business idea into exactly three targeted sub-queries
+        optimized for multi-query vector retrieval.
+        """
+        expansion_prompt = f"""You are a legal query expansion engine for semantic vector search in a RAG system.
+
+Task:
+Generate exactly 3 retrieval sub-queries for Indian startup legal compliance.
+
+Strict output rules:
+1. Return ONLY a valid JSON array of strings with exactly 3 elements.
+2. Do not return markdown, code fences, commentary, or extra keys.
+3. Query 1 must focus on industry-specific regulations (e.g., Food, Health, sector licenses, packaging/safety).
+4. Query 2 must focus on taxation and corporate structure (e.g., GST, Companies Act, registrations, invoicing, accounting compliance).
+5. Query 3 must focus on labor, contracts, and data privacy.
+6. Each query should be specific, keyword-dense, and optimized for legal document retrieval in India.
+
+User idea: {user_idea}
+
+Output JSON array only:"""
+
+        url_with_key = f"{self.endpoint}?key={self.api_key}"
+        payload = {
+            "contents": [
+                {
+                    "parts": [
+                        {"text": expansion_prompt}
+                    ]
+                }
+            ],
+            "generationConfig": {
+                "temperature": 0.1,
+                "topK": 40,
+                "topP": 0.9,
+                "maxOutputTokens": 512
+            }
+        }
+        headers = {
+            "Content-Type": "application/json"
+        }
+
+        def _parse_sub_queries(raw_text: str) -> List[str]:
+            cleaned = (raw_text or "").strip()
+            if not cleaned:
+                raise ValueError("Empty expansion response")
+
+            # Handle markdown wrapped JSON, e.g. ```json [...] ```
+            cleaned = re.sub(r"^```(?:json)?\\s*", "", cleaned, flags=re.IGNORECASE)
+            cleaned = re.sub(r"\\s*```$", "", cleaned)
+
+            array_match = re.search(r"\[.*\]", cleaned, flags=re.DOTALL)
+            if array_match:
+                cleaned = array_match.group(0)
+
+            parsed = json.loads(cleaned)
+            if not isinstance(parsed, list):
+                raise ValueError("Expansion output is not a JSON array")
+
+            queries = [str(item).strip() for item in parsed if isinstance(item, str) and str(item).strip()]
+            if len(queries) != 3:
+                raise ValueError("Expansion output must contain exactly 3 non-empty string queries")
+
+            return queries
+
+        async def _expand_with_grok() -> List[str]:
+            grok_headers = {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {self.grok_api_key}"
+            }
+            grok_payload = {
+                "model": "llama-3.3-70b-versatile",
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": (
+                            "You are a legal query expansion engine for semantic vector search in a RAG system. "
+                            "Return only a valid JSON array of exactly 3 strings. "
+                            "Do not include markdown or commentary."
+                        )
+                    },
+                    {
+                        "role": "user",
+                        "content": expansion_prompt
+                    }
+                ],
+                "temperature": 0.1,
+                "max_tokens": 300
+            }
+
+            logger.info("Gemini query expansion failed. Trying Grok fallback for expansion...")
+            async with httpx.AsyncClient(timeout=60) as client:
+                response = await client.post(self.grok_endpoint, json=grok_payload, headers=grok_headers)
+                response.raise_for_status()
+
+            data = response.json()
+            choices = data.get("choices", [])
+            if not choices:
+                raise Exception("Grok returned no choices for query expansion.")
+
+            message = choices[0].get("message", {})
+            return _parse_sub_queries(message.get("content", ""))
+
+        try:
+            logger.info("Expanding short legal query for retrieval using Gemini...")
+            async with httpx.AsyncClient(timeout=60) as client:
+                response = await client.post(url_with_key, json=payload, headers=headers)
+                response.raise_for_status()
+
+            data = response.json()
+            candidates = data.get("candidates", [])
+            if not candidates:
+                raise Exception("Gemini returned no candidates for query expansion.")
+
+            content = candidates[0].get("content", {})
+            parts = content.get("parts", [])
+            return _parse_sub_queries(parts[0].get("text", "") if parts else "")
+        except Exception as gemini_error:
+            logger.error(f"Query expansion failed with Gemini: {gemini_error}")
+            try:
+                return await _expand_with_grok()
+            except Exception as grok_error:
+                logger.error(f"Query expansion failed with Grok fallback: {grok_error}")
+                return [user_idea]
 
     async def generate_with_grok(self, prompt: str) -> str:
         """
