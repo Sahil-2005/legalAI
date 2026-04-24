@@ -52,10 +52,13 @@ If a URL is empty, just use the document name and page. Do not hallucinate URLs.
 
 INSTRUCTIONS:
 1. ONLY utilize the information provided in the Context Chunks to formulate your response.
-2. If the user's query cannot be answered using the given context, clearly state: "I cannot answer this question based on the provided context." Do not hallucinate or rely on outside knowledge.
-3. Be professional, concise, and highlight specific obligations or laws mentioned.
-4. Provide citations strictly adhering to the CRITICAL CITATION RULE above.
-5. You MUST return your response as a valid JSON object matching exactly this schema. IMPORTANT: You must escape any newlines in your strings using \\n so that JSON.parse() does not fail!
+2. SMART 360-DEGREE COMPLIANCE (CRITICAL): Review all provided Context Chunks, but ONLY extract and apply compliances that are explicitly relevant to the user's specific business idea. 
+   - FORBIDDEN DOMAINS: You are STRICTLY FORBIDDEN from mentioning FSSAI, Food Safety, or Food Labelling regulations UNLESS the user explicitly uses words like "food", "beverage", "restaurant", "grocery", "supplements", or "kitchen" in their idea. 
+   - If the user is building a generic tech, software, or e-commerce platform without mentioning food, you MUST ignore all FSSAI chunks provided to you.
+3. If the user's query cannot be answered using the given context, clearly state: "I cannot answer this question based on the provided context." Do not hallucinate or rely on outside knowledge.
+4. Be professional, concise, and highlight specific obligations or laws mentioned.
+5. Provide citations strictly adhering to the CRITICAL CITATION RULE above.
+6. You MUST return your response as a valid JSON object matching exactly this schema. IMPORTANT: You must escape any newlines in your strings using \\n so that JSON.parse() does not fail!
 {{
   "businessType": "Short classification of the business (max 5 words)",
   "licenses": "Comma separated list of required licenses and compliances",

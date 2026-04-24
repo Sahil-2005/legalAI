@@ -475,20 +475,20 @@ const GetStarted = () => {
           </motion.div>
 
           {/* ──── TAB NAVIGATION ──── */}
-            <div className="flex gap-2 w-full bg-slate-950/40 backdrop-blur-xl border border-slate-700/30 rounded-2xl p-1.5 overflow-x-auto no-scrollbar scroll-smooth">
+            <div className="flex gap-3 w-full bg-slate-950/50 backdrop-blur-xl border border-slate-700/40 rounded-2xl p-2.5 overflow-x-auto no-scrollbar scroll-smooth shadow-lg shadow-black/20 mt-4 mb-4">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex-none md:flex-1 flex items-center justify-center gap-2.5 px-5 py-2.5 rounded-xl border-none cursor-pointer transition-all duration-300 whitespace-nowrap min-w-[130px] md:min-w-0 ${
+                  className={`flex-none md:flex-1 flex items-center justify-center gap-3 px-6 py-3.5 rounded-xl border-none cursor-pointer transition-all duration-300 whitespace-nowrap min-w-[140px] md:min-w-0 ${
                     activeTab === tab.id 
-                      ? "bg-indigo-500/20 text-indigo-100 shadow-lg shadow-indigo-500/10 ring-1 ring-indigo-500/30" 
-                      : "bg-transparent text-slate-500 hover:text-slate-400 hover:bg-slate-800/20"
+                      ? "bg-indigo-500/25 text-indigo-50 shadow-xl shadow-indigo-500/20 ring-1 ring-indigo-400/50" 
+                      : "bg-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
                   }`}
-                  style={{ fontSize: "13px", fontWeight: activeTab === tab.id ? 600 : 500 }}
+                  style={{ fontSize: "14px", fontWeight: activeTab === tab.id ? 600 : 500, letterSpacing: "0.01em" }}
                 >
-                  <div className={`p-1 rounded-lg transition-colors ${activeTab === tab.id ? "bg-indigo-400/20" : "bg-slate-800/40"}`}>
-                    {cloneElement(tab.icon, { size: 15, strokeWidth: 2.5, className: activeTab === tab.id ? "text-indigo-300" : "text-slate-600" })}
+                  <div className={`p-1.5 rounded-lg transition-colors ${activeTab === tab.id ? "bg-indigo-400/30" : "bg-slate-800/60"}`}>
+                    {cloneElement(tab.icon, { size: 16, strokeWidth: 2.5, className: activeTab === tab.id ? "text-indigo-200" : "text-slate-500" })}
                   </div>
                   {tab.label}
                 </button>
